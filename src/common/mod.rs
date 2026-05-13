@@ -2,7 +2,7 @@
 
 use std::{ fs::File, net::SocketAddr };
 use std::result::Result;
-use anyhow;
+use anyhow::{ self, Ok };
 use futures::future::join_all;
 use tokio::net::TcpStream;
 
@@ -36,7 +36,7 @@ pub fn parse_yaml() -> Result<Vec<Server>, anyhow::Error> {
     Ok(res)
 }
 
-pub async fn check_active_servers() -> Result<Vec<Server>, anyhow::Error> {
+pub async fn check_servers_health() -> Result<Vec<Server>, anyhow::Error> {
     let servers = parse_yaml()?;
 
     // try to connect each one and filter out the dead ones
@@ -62,4 +62,15 @@ pub async fn check_active_servers() -> Result<Vec<Server>, anyhow::Error> {
     // run the futures as the async blocks are lazy
     let res = join_all(futures).await;
     Ok(res)
+}
+
+pub async fn active_servers() -> Result<Vec<Server>, anyhow::Error> {
+    let servers = check_servers_health().await?;
+
+    Ok(
+        servers
+            .into_iter()
+            .filter(|item| item.can_connect)
+            .collect()
+    )
 }

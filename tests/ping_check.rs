@@ -1,7 +1,5 @@
-use std::net::SocketAddr;
-use futures::future::join_all;
-use tokio::net::{ TcpListener, TcpStream };
-use laminar::common::{ parse_yaml };
+use tokio::net::{ TcpListener };
+use laminar::common::{ check_servers_health };
 
 #[tokio::test]
 async fn ping_check() {
@@ -16,15 +14,7 @@ async fn ping_check() {
         });
     }
 
-    let servers = parse_yaml().unwrap();
-
-    let futures = servers.into_iter().map(|mut s| async move {
-        let addr: SocketAddr = s.ip.parse().unwrap();
-        s.can_connect = TcpStream::connect(addr).await.is_ok();
-        return s;
-    });
-
-    let result = join_all(futures).await;
+    let result = check_servers_health().await.unwrap();
 
     assert!(result[0].can_connect);
     assert!(result[1].can_connect);
