@@ -4,6 +4,9 @@ use anyhow::Context;
 use crate::config::default::DEFAULT_CONFIG;
 use crate::{ config::Config };
 
+// Responsible for loading and deserializing YAML configuration files.
+// This module should ONLY handle configuration parsing.
+// Validation and runtime state initialization happen separately.
 pub fn load_config(config_path: &str) -> anyhow::Result<Config> {
     if !Path::new(config_path).exists() {
         fs::write(config_path, DEFAULT_CONFIG).context("failed to create default config")?;

@@ -2,6 +2,10 @@ use std::collections::HashSet;
 use anyhow::{ bail, Result };
 use crate::config::types::Config;
 
+// The load balancer follows a fail-fast startup philosophy.
+// Invalid topology or malformed configuration should prevent startup
+// rather than causing runtime instability.
+
 pub fn validate_config(config: &Config) -> Result<()> {
     let mut upstream_ids = HashSet::new();
     for upstream in &config.upstreams {

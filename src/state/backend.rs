@@ -2,10 +2,20 @@
 // use tokio::sync::RwLock;
 use crate::config::BackendServerConfig;
 
+// Mutable runtime representation of a backend server.
+// - immutable backend configuration
+// - mutable runtime health/connection state
+// This struct is the primary object used during balancing decisions.
 #[derive(Debug)]
 pub struct BackendState {
     pub config: BackendServerConfig,
+
+    // Temporary boolean health indicator.
+    // This will later evolve into a richer health state machine:
+    // Healthy -> Unhealthy -> Recovering
     pub healthy: bool,
+
+    // This becomes important for least-connections balancing.
     pub active_connections: usize,
     pub failed_health_checks: usize,
 }

@@ -13,12 +13,13 @@ async fn main() -> Result<()> {
 
     info!("loading config from {}", path);
     let config = load_config(&path)?;
-    println!("{:#?}", config);
 
     validate_config(&config)?;
     info!("config validation successful");
 
     let state = AppState::build(config);
+
+    println!("{:#?}", state);
     info!("initialized {} upstream pools", state.upstreams.len());
     for upstream in &state.upstreams {
         info!("upstream '{}' initialized with {} backends", upstream.id, upstream.backends.len());
