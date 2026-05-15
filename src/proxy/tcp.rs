@@ -18,7 +18,7 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 
         info!("new client connected {}", client_address);
         let state = state.clone();
-
+        // Arc<RwLock<AppState>> means SharedAppState only
         tokio::spawn(async move {
             if let Err(error) = handle_connection(client_stream, state).await {
                 error!("connection handling failed {:?}", error)
@@ -32,7 +32,7 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
         let state = state.read().await;
         let upstream = &state.upstreams[0];
         let backend_arc = match upstream.next_backend() {
-            Some(backend) => backend.clone(),
+            Some(backend) => backend,
             None => {
                 error!("no healthy backend available");
                 return Ok(());
