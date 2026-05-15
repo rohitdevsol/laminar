@@ -6,9 +6,18 @@ use crate::{ config::types::Config, state::backend::BackendState };
 #[derive(Debug)]
 pub struct UpstreamPool {
     pub id: String,
+    pub current_index: usize,
     pub backends: Vec<BackendState>,
 }
 
+impl UpstreamPool {
+    // Very naive round robin.
+    pub fn next_backend(&mut self) -> &BackendState {
+        let backend = &self.backends[&self.current_index % self.backends.len()];
+        self.current_index += 1;
+        backend
+    }
+}
 // Central shared runtime state for the entire load balancer.
 // Most subsystems eventually interact with this:
 // - proxying
@@ -39,6 +48,7 @@ impl AppState {
 
                 UpstreamPool {
                     id: upstream.id,
+                    current_index: 0,
                     backends, // all backends belonging to a single upstream type ( single logical service)
                 }
             })
