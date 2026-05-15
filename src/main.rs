@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
     // for upstream in &state.upstreams {
     //     info!("upstream '{}' initialized with {} backends", upstream.id, upstream.backends.len());
     // }
-    let listener_address = format!("{}:{}", listener_host, listener_port);
+    let listener_address = format!("{listener_host}:{listener_port}");
 
     start_tcp_proxy(&listener_address, shared_state).await?;
 
