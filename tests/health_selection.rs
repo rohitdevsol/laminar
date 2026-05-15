@@ -1,0 +1,56 @@
+use std::sync::atomic::AtomicBool;
+
+use laminar::{
+    config::types::BackendServerConfig,
+    state::{app::UpstreamPool, backend::BackendState},
+};
+
+fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
+    BackendState {
+        config: BackendServerConfig {
+            id: id.to_string(),
+            host: "127.0.0.1".to_string(),
+            port,
+            weight: 1,
+        },
+
+        healthy: AtomicBool::new(healthy),
+
+        active_connections: 0,
+
+        failed_health_checks: 0,
+    }
+}
+
+#[test]
+fn unhealthy_backend_is_skipped() {
+    let upstream = UpstreamPool {
+        id: "main".to_string(),
+
+        current_index: (0).into(),
+
+        backends: vec![create_backend("dead", 9001, false), create_backend("healthy", 9002, true)],
+    };
+
+    let backend = upstream.next_backend().unwrap();
+
+    assert_eq!(backend.config.port, 9002);
+}
+
+#[test]
+fn returns_none_when_all_backends_dead() {
+    let upstream = UpstreamPool {
+        id: "main".to_string(),
+
+        current_index: (0).into(),
+
+        backends: vec![
+            create_backend("dead-1", 9001, false),
+            create_backend("dead-2", 9002, false),
+        ],
+    };
+
+    let backend = upstream.next_backend();
+
+    assert!(backend.is_none());
+}

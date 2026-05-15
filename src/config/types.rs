@@ -26,6 +26,8 @@ pub struct ServerConfig {
 pub struct LoadBalancerConfig {
     pub retry_attempts: usize,
     pub sticky_sessions: bool,
+
+    pub health_check_interval_secs: u64,
 }
 
 // Static backend server definition loaded from configuration.
