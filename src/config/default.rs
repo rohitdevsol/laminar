@@ -8,6 +8,7 @@ server:
 load_balancer:
   retry_attempts: 2
   sticky_sessions: false
+  health_check_interval_secs: 5
 
 upstreams:
   - id: "main"

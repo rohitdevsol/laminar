@@ -3,7 +3,7 @@ use std::{sync::atomic::Ordering, time::Duration};
 use crate::state::{app::SharedAppState, backend::BackendState};
 use anyhow::Result;
 use tokio::{net::TcpStream, time::sleep};
-use tracing::info;
+use tracing::{info, warn};
 
 // This will evolve later into:
 // - retries
@@ -13,21 +13,23 @@ use tracing::info;
 pub async fn check_backend_status(backend: &BackendState) -> Result<()> {
     let backend_address = { format!("{}:{}", backend.config.host, backend.config.port) };
 
-    match TcpStream::connect(&backend_address).await {
-        Ok(_) => {
-            backend.healthy.store(true, Ordering::Relaxed);
-            info!("backend {} healthy", backend.config.id);
-        }
-        Err(_) => {
-            backend.healthy.store(false, Ordering::Relaxed);
-            info!("backend {} unreachable", backend.config.id);
+    let was_healthy = backend.healthy.load(Ordering::Relaxed);
+    let is_healthy = TcpStream::connect(&backend_address).await.is_ok();
+
+    backend.healthy.store(is_healthy, Ordering::Relaxed);
+
+    if was_healthy != is_healthy {
+        if is_healthy {
+            info!("backend '{}' recovered", backend.config.id);
+        } else {
+            warn!("backend '{}' became unhealthy", backend.config.id);
         }
     }
 
     Ok(())
 }
 
-pub async fn start_health_checker(state: SharedAppState) {
+pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
     loop {
         let state = state.read().await;
         for upstream in &state.upstreams {
@@ -35,7 +37,9 @@ pub async fn start_health_checker(state: SharedAppState) {
                 let _ = check_backend_status(backend).await;
             }
         }
+
+        // releasing the lock before going to sleep ..
         drop(state);
-        sleep(Duration::from_secs(5)).await;
+        sleep(Duration::from_secs(interval_secs)).await;
     }
 }

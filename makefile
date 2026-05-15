@@ -22,6 +22,11 @@ clean:
 ping-test:
 	cargo test --test ping_check -- --nocapture
 
+setup:
+	chmod +x scripts/*.sh
+	chmod +x .githooks/*
+	git config core.hooksPath .githooks
+
 clippy:
 	cargo clippy --all-targets --all-features -- -D warnings
 

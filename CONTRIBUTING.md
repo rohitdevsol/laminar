@@ -4,6 +4,29 @@ Thanks for contributing to Laminar.
 
 ---
 
+# Initial Setup
+
+After cloning the repository, run:
+
+```bash
+make setup
+```
+
+This configures:
+
+- local git hooks
+- executable scripts
+- automated pre-commit and pre-push checks
+
+After setup:
+
+- `git commit` automatically runs formatting and clippy fixes
+- `git push` automatically runs verification checks
+
+This setup only needs to be run once per repository clone.
+
+---
+
 # Development Workflow
 
 Before pushing code, run:

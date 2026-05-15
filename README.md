@@ -55,6 +55,27 @@ cargo install cargo-audit
 cargo install cargo-deny
 ```
 
+# Initial Setup
+
+After cloning the repository, run:
+
+```bash
+make setup
+```
+
+This configures:
+
+- local git hooks
+- executable development scripts
+- automated pre-commit and pre-push checks
+
+After setup:
+
+- `git commit` automatically runs formatting and clippy fixes
+- `git push` automatically runs verification checks
+
+This setup only needs to be run once per repository clone.
+
 ---
 
 # Running The Project

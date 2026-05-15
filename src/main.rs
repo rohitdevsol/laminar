@@ -25,13 +25,12 @@ async fn main() -> Result<()> {
     info!("config validation successful");
 
     let listener_host = config.server.host.clone();
-
     let listener_port = config.server.port;
 
+    let health_interval = config.load_balancer.health_check_interval_secs;
+
     let state = AppState::build(config);
-
     info!("initialized {} upstream pools", state.upstreams.len());
-
     if state.upstreams.is_empty() {
         bail!("no upstreams configured");
     }
@@ -42,9 +41,8 @@ async fn main() -> Result<()> {
     // }
 
     let health_state = shared_state.clone();
-
     tokio::spawn(async move {
-        start_health_checker(health_state).await;
+        start_health_checker(health_state, health_interval).await;
     });
 
     let listener_address = format!("{listener_host}:{listener_port}");
