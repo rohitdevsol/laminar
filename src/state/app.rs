@@ -1,6 +1,6 @@
-use crate::{config::types::Config, state::backend::BackendState};
+use crate::{ config::types::Config, state::backend::BackendState };
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{ AtomicUsize, Ordering };
 use tokio::sync::RwLock;
 // Contains all backend servers belonging to a single logical service.
 #[derive(Debug)]
@@ -12,9 +12,15 @@ pub struct UpstreamPool {
 
 impl UpstreamPool {
     // Very naive round robin.
-    pub fn next_backend(&self) -> &BackendState {
-        let index = self.current_index.fetch_add(1, Ordering::Relaxed);
-        &self.backends[index % self.backends.len()]
+    pub fn next_backend(&self) -> Option<&BackendState> {
+        for _ in 0..self.backends.len() {
+            let index = self.current_index.fetch_add(1, Ordering::Relaxed);
+            let backend = &self.backends[index % self.backends.len()];
+            if backend.healthy.load(Ordering::Relaxed) {
+                return Some(backend);
+            }
+        }
+        return None;
     }
 }
 // Central shared runtime state for the entire load balancer.
@@ -37,8 +43,7 @@ impl AppState {
         // each upstream has an id, algorithm and servers( yes group of servers)
         // each server has id, host, port, weight
 
-        let upstreams = config
-            .upstreams
+        let upstreams = config.upstreams
             .into_iter()
             .map(|upstream| {
                 // upstream has id, algorithm and servers
