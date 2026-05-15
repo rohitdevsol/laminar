@@ -1,7 +1,7 @@
-use crate::{ config::types::Config, state::backend::BackendState };
+use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::RwLock;
-use std::sync::atomic::{ AtomicUsize, Ordering };
 // Contains all backend servers belonging to a single logical service.
 #[derive(Debug)]
 pub struct UpstreamPool {
@@ -37,7 +37,8 @@ impl AppState {
         // each upstream has an id, algorithm and servers( yes group of servers)
         // each server has id, host, port, weight
 
-        let upstreams = config.upstreams
+        let upstreams = config
+            .upstreams
             .into_iter()
             .map(|upstream| {
                 // upstream has id, algorithm and servers
