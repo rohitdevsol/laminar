@@ -13,7 +13,7 @@ pub struct UpstreamPool {
 impl UpstreamPool {
     // Very naive round robin.
     pub fn next_backend(&mut self) -> &BackendState {
-        let backend = &self.backends[&self.current_index % self.backends.len()];
+        let backend = &self.backends[self.current_index % self.backends.len()];
         self.current_index += 1;
         backend
     }
