@@ -1,6 +1,6 @@
-use crate::{ config::types::Config, state::backend::BackendState };
+use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
-use std::sync::atomic::{ AtomicUsize, Ordering };
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::RwLock;
 // Contains all backend servers belonging to a single logical service.
 #[derive(Debug)]
@@ -20,7 +20,7 @@ impl UpstreamPool {
                 return Some(backend);
             }
         }
-        return None;
+        None
     }
 }
 // Central shared runtime state for the entire load balancer.
@@ -43,7 +43,8 @@ impl AppState {
         // each upstream has an id, algorithm and servers( yes group of servers)
         // each server has id, host, port, weight
 
-        let upstreams = config.upstreams
+        let upstreams = config
+            .upstreams
             .into_iter()
             .map(|upstream| {
                 // upstream has id, algorithm and servers

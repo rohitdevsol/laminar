@@ -1,8 +1,8 @@
-use std::{ sync::atomic::Ordering, time::Duration };
+use std::{sync::atomic::Ordering, time::Duration};
 
-use crate::state::{ app::SharedAppState, backend::BackendState };
-use anyhow::{ Result };
-use tokio::{ net::TcpStream, time::sleep };
+use crate::state::{app::SharedAppState, backend::BackendState};
+use anyhow::Result;
+use tokio::{net::TcpStream, time::sleep};
 use tracing::info;
 
 // This will evolve later into:
