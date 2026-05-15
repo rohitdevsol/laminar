@@ -1,16 +1,16 @@
-name: CI
+name: Security Audit
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  checks:
+  audit:
     runs-on: ubuntu-latest
 
     steps:
