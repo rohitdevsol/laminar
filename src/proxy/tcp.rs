@@ -30,15 +30,19 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
     let backend_address = {
         let state = state.read().await;
         let upstream = &state.upstreams[0];
-        let backend = upstream.next_backend();
+        let backend = match upstream.next_backend() {
+            Some(backend) => backend,
+            None => {
+                error!("no healthy backend available");
+                return Ok(());
+            }
+        };
         format!("{}:{}", backend.config.host, backend.config.port)
     };
 
     info!("forwarding traffic to {}", backend_address);
 
     let mut backend_stream = TcpStream::connect(&backend_address).await?;
-
-    drop(state);
 
     copy_bidirectional(&mut stream, &mut backend_stream).await?;
 

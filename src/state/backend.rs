@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicBool;
+
 // use std::sync::Arc;
 // use tokio::sync::RwLock;
 use crate::config::BackendServerConfig;
@@ -13,7 +15,7 @@ pub struct BackendState {
     // Temporary boolean health indicator.
     // This will later evolve into a richer health state machine:
     // Healthy -> Unhealthy -> Recovering
-    pub healthy: bool,
+    pub healthy: AtomicBool,
 
     // This becomes important for least-connections balancing.
     pub active_connections: usize,
@@ -24,6 +26,11 @@ pub struct BackendState {
 
 impl BackendState {
     pub fn new(config: BackendServerConfig) -> Self {
-        Self { config, healthy: true, active_connections: 0, failed_health_checks: 0 }
+        Self {
+            config,
+            healthy: AtomicBool::new(true),
+            active_connections: 0,
+            failed_health_checks: 0,
+        }
     }
 }

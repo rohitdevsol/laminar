@@ -4,6 +4,7 @@
 use anyhow::{Result, bail};
 use laminar::{
     config::{loader::load_config, validator::validate_config},
+    health::tcp::start_health_checker,
     proxy::tcp::start_tcp_proxy,
     state::app::{AppState, SharedAppState},
 };
@@ -39,6 +40,13 @@ async fn main() -> Result<()> {
     // for upstream in &state.upstreams {
     //     info!("upstream '{}' initialized with {} backends", upstream.id, upstream.backends.len());
     // }
+
+    let health_state = shared_state.clone();
+
+    tokio::spawn(async move {
+        start_health_checker(health_state).await;
+    });
+
     let listener_address = format!("{listener_host}:{listener_port}");
 
     start_tcp_proxy(&listener_address, shared_state).await?;

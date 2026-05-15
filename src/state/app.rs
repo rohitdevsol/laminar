@@ -12,9 +12,15 @@ pub struct UpstreamPool {
 
 impl UpstreamPool {
     // Very naive round robin.
-    pub fn next_backend(&self) -> &BackendState {
-        let index = self.current_index.fetch_add(1, Ordering::Relaxed);
-        &self.backends[index % self.backends.len()]
+    pub fn next_backend(&self) -> Option<&BackendState> {
+        for _ in 0..self.backends.len() {
+            let index = self.current_index.fetch_add(1, Ordering::Relaxed);
+            let backend = &self.backends[index % self.backends.len()];
+            if backend.healthy.load(Ordering::Relaxed) {
+                return Some(backend);
+            }
+        }
+        None
     }
 }
 // Central shared runtime state for the entire load balancer.
