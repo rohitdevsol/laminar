@@ -74,8 +74,62 @@ This restructuring prepares Laminar for:
 
 The internal architecture now more closely resembles real-world proxy and load balancer systems.
 
-## 2026-05-14
+---
+
+## 2026-05-15
 
 ### Added
 
-- Added CI checks and scripts
+- Added basic TCP reverse proxy functionality
+- Added bidirectional TCP traffic forwarding using Tokio
+- Added naive round robin backend selection
+- Added runtime backend health tracking using `AtomicBool`
+- Added periodic background backend health monitoring
+- Added automatic unhealthy backend skipping during selection
+- Added configurable health check intervals through YAML config
+- Added graceful handling when no healthy backends are available
+- Added integration tests for:
+  - round robin balancing
+  - unhealthy backend filtering
+  - backend health probing
+  - dead backend handling
+
+### Changed
+
+- Refactored backend selection flow to reduce shared state lock contention
+- Replaced mutable round robin counters with `AtomicUsize`
+- Reduced runtime lock scope during backend selection
+- Improved health logging to only emit meaningful state transitions
+- Refactored proxy flow to separate:
+  - backend selection
+  - backend connection
+  - traffic forwarding
+
+### Notes
+
+This phase transformed Laminar from a static proxy prototype into a dynamically adaptive load balancer runtime.
+
+Laminar can now:
+
+- forward real TCP traffic between clients and backend servers
+- distribute requests across backend pools
+- detect backend failures at runtime
+- automatically avoid routing traffic to unhealthy servers
+- recover backend availability without requiring restarts
+
+The implementation intentionally prioritizes simplicity and observability over advanced optimizations.
+
+Current health monitoring behavior remains intentionally naive:
+
+- direct TCP connectivity probing
+- immediate healthy/unhealthy transitions
+- sequential backend checking
+
+This creates a clean foundation for future improvements such as:
+
+- retry policies
+- failure thresholds
+- recovery delays
+- latency-aware health scoring
+- parallelized health probes
+- advanced balancing strategies
