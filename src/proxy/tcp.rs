@@ -6,6 +6,7 @@ use tokio::{
 use tracing::{error, info};
 
 use crate::state::app::SharedAppState;
+use crate::state::backend::ConnectionGuard;
 
 pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let listener = TcpListener::bind(address).await?;
@@ -27,18 +28,20 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 }
 
 async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
-    let backend_address = {
+    let guard = {
         let state = state.read().await;
         let upstream = &state.upstreams[0];
-        let backend = match upstream.next_backend() {
-            Some(backend) => backend,
+        let backend_arc = match upstream.next_backend() {
+            Some(backend) => backend.clone(),
             None => {
                 error!("no healthy backend available");
                 return Ok(());
             }
         };
-        format!("{}:{}", backend.config.host, backend.config.port)
+        ConnectionGuard::new(backend_arc)
+        // format!("{}:{}", backend.config.host, backend.config.port)
     };
+    let backend_address = guard.address();
 
     info!("forwarding traffic to {}", backend_address);
 

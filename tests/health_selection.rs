@@ -16,7 +16,7 @@ fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
 
         healthy: AtomicBool::new(healthy),
 
-        active_connections: 0,
+        active_connections: 0.into(),
 
         failed_health_checks: 0,
     }
@@ -29,7 +29,10 @@ fn unhealthy_backend_is_skipped() {
 
         current_index: (0).into(),
 
-        backends: vec![create_backend("dead", 9001, false), create_backend("healthy", 9002, true)],
+        backends: vec![
+            create_backend("dead", 9001, false).into(),
+            create_backend("healthy", 9002, true).into(),
+        ],
     };
 
     let backend = upstream.next_backend().unwrap();
@@ -45,8 +48,8 @@ fn returns_none_when_all_backends_dead() {
         current_index: (0).into(),
 
         backends: vec![
-            create_backend("dead-1", 9001, false),
-            create_backend("dead-2", 9002, false),
+            create_backend("dead-1", 9001, false).into(),
+            create_backend("dead-2", 9002, false).into(),
         ],
     };
 

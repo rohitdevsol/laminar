@@ -90,9 +90,9 @@
 
 ## Connection Tracking
 
-* [ ] Track active connections per backend
-* [ ] Increment on connect
-* [ ] Decrement on disconnect
+* [*] Track active connections per backend
+* [*] Increment on connect
+* [*] Decrement on disconnect
 * [ ] Track total requests
 
 ---
@@ -129,7 +129,7 @@
 * [ ] Refactor duplicated runtime logic
 * [ ] Separate balancing module
 * [ ] Separate health module
-* [ ] Improve state ownership model
+* [*] Improve state ownership model
 
 ---
 

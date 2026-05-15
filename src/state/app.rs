@@ -7,17 +7,17 @@ use tokio::sync::RwLock;
 pub struct UpstreamPool {
     pub id: String,
     pub current_index: AtomicUsize,
-    pub backends: Vec<BackendState>,
+    pub backends: Vec<Arc<BackendState>>,
 }
 
 impl UpstreamPool {
     // Very naive round robin.
-    pub fn next_backend(&self) -> Option<&BackendState> {
+    pub fn next_backend(&self) -> Option<Arc<BackendState>> {
         for _ in 0..self.backends.len() {
             let index = self.current_index.fetch_add(1, Ordering::Relaxed);
             let backend = &self.backends[index % self.backends.len()];
             if backend.healthy.load(Ordering::Relaxed) {
-                return Some(backend);
+                return Some(backend.clone());
             }
         }
         None
@@ -50,7 +50,8 @@ impl AppState {
                 // upstream has id, algorithm and servers
                 // BackendState.config is of same type as a server
 
-                let backends = upstream.servers.into_iter().map(BackendState::new).collect();
+                let backends =
+                    upstream.servers.into_iter().map(|s| Arc::new(BackendState::new(s))).collect();
 
                 UpstreamPool {
                     id: upstream.id,

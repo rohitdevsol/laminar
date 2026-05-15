@@ -88,6 +88,8 @@ The internal architecture now more closely resembles real-world proxy and load b
 - Added automatic unhealthy backend skipping during selection
 - Added configurable health check intervals through YAML config
 - Added graceful handling when no healthy backends are available
+- Added RAII-based active connection tracking using `ConnectionGuard`
+- Added thread-safe connection metrics using `AtomicUsize`
 - Added integration tests for:
   - round robin balancing
   - unhealthy backend filtering
@@ -104,6 +106,8 @@ The internal architecture now more closely resembles real-world proxy and load b
   - backend selection
   - backend connection
   - traffic forwarding
+- Refactored state ownership to use `Arc<BackendState>` for shared runtime access
+- Moved connection cleanup logic to `Drop` implementation for guaranteed decrementing
 
 ### Notes
 
