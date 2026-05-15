@@ -1,5 +1,4 @@
-pub const DEFAULT_CONFIG: &str =
-    r#"
+pub const DEFAULT_CONFIG: &str = r#"
 version: 1
 
 server:

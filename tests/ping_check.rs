@@ -1,5 +1,5 @@
+use laminar::{config::types::BackendServerConfig, state::backend::BackendState};
 use tokio::net::TcpListener;
-use laminar::{ config::types::BackendServerConfig, state::backend::BackendState };
 
 #[tokio::test]
 async fn ping_check() {
@@ -22,20 +22,18 @@ async fn ping_check() {
             port: 3000,
             weight: 1,
         }),
-
         BackendState::new(BackendServerConfig {
             id: "server-2".into(),
             host: "127.0.0.1".into(),
             port: 3001,
             weight: 1,
         }),
-
         BackendState::new(BackendServerConfig {
             id: "dead-server".into(),
             host: "127.0.0.1".into(),
             port: 3999,
             weight: 1,
-        })
+        }),
     ];
 
     for backend in backends {

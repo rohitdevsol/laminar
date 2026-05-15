@@ -1,6 +1,9 @@
 use anyhow::Ok;
-use tokio::{ io::copy_bidirectional, net::{ TcpListener, TcpStream } };
-use tracing::{ info, error };
+use tokio::{
+    io::copy_bidirectional,
+    net::{TcpListener, TcpStream},
+};
+use tracing::{error, info};
 
 use crate::state::app::SharedAppState;
 

@@ -1,6 +1,6 @@
-use std::collections::HashSet;
-use anyhow::{ bail, Result };
 use crate::config::types::Config;
+use anyhow::{Result, bail};
+use std::collections::HashSet;
 
 // The load balancer follows a fail-fast startup philosophy.
 // Invalid topology or malformed configuration should prevent startup

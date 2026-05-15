@@ -73,3 +73,9 @@ This restructuring prepares Laminar for:
 - future admin APIs
 
 The internal architecture now more closely resembles real-world proxy and load balancer systems.
+
+## 2026-05-14
+
+### Added
+
+- Added CI checks and scripts

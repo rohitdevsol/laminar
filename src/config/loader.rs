@@ -1,8 +1,8 @@
+use crate::config::Config;
+use crate::config::default::DEFAULT_CONFIG;
+use anyhow::Context;
 use std::fs;
 use std::path::Path;
-use anyhow::Context;
-use crate::config::default::DEFAULT_CONFIG;
-use crate::{ config::Config };
 
 // Responsible for loading and deserializing YAML configuration files.
 // This module should ONLY handle configuration parsing.

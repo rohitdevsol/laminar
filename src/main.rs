@@ -1,22 +1,21 @@
-use std::sync::{ Arc };
+#![warn(clippy::all)]
+#![warn(clippy::pedantic)]
 
-use anyhow::{ bail, Result };
+use anyhow::{Result, bail};
+use laminar::{
+    config::{loader::load_config, validator::validate_config},
+    proxy::tcp::start_tcp_proxy,
+    state::app::{AppState, SharedAppState},
+};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use laminar::{
-    config::{ loader::load_config, validator::validate_config },
-    proxy::tcp::start_tcp_proxy,
-    state::app::{ AppState, SharedAppState },
-};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
-    let path = std::env
-        ::args()
-        .nth(1)
-        .unwrap_or_else(|| "laminar_config.yaml".to_string());
+    let path = std::env::args().nth(1).unwrap_or_else(|| "laminar_config.yaml".to_string());
 
     info!("loading config from {}", path);
     let config = load_config(&path)?;
