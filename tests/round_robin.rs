@@ -16,7 +16,7 @@ fn create_backend(id: &str, port: u16) -> BackendState {
 
         healthy: AtomicBool::new(true),
 
-        active_connections: 0,
+        active_connections: 0.into(),
 
         failed_health_checks: 0,
     }
@@ -29,7 +29,10 @@ fn round_robin_rotates_backends() {
 
         current_index: (0).into(),
 
-        backends: vec![create_backend("server-1", 9001), create_backend("server-2", 9002)],
+        backends: vec![
+            create_backend("server-1", 9001).into(),
+            create_backend("server-2", 9002).into(),
+        ],
     };
 
     let first = upstream.next_backend().unwrap();

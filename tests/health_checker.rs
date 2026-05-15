@@ -18,7 +18,7 @@ fn create_backend(port: u16) -> BackendState {
 
         healthy: AtomicBool::new(false),
 
-        active_connections: 0,
+        active_connections: 0.into(),
 
         failed_health_checks: 0,
     }
