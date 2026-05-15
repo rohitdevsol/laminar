@@ -27,12 +27,12 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 }
 
 async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
-    let mut state = state.write().await;
-    let upstream = &mut state.upstreams[0];
-
-    let backend = upstream.next_backend();
-
-    let backend_address = format!("{}:{}", backend.config.host, backend.config.port);
+    let backend_address = {
+        let state = state.read().await;
+        let upstream = &state.upstreams[0];
+        let backend = upstream.next_backend();
+        format!("{}:{}", backend.config.host, backend.config.port)
+    };
 
     info!("forwarding traffic to {}", backend_address);
 
