@@ -36,9 +36,15 @@ impl ConnectionGuard {
         Self { backend }
     }
 
+    pub fn backend_id(&self) -> &str {
+        &self.backend.config.id
+    }
     // get the address from the guard
     pub fn address(&self) -> String {
         format!("{}:{}", self.backend.config.host, self.backend.config.port)
+    }
+    pub fn mark_backend_unhealthy(&self) {
+        self.backend.healthy.store(false, Ordering::Relaxed);
     }
 }
 

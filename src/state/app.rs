@@ -38,6 +38,7 @@ impl UpstreamPool {
 // - admin APIs
 #[derive(Debug)]
 pub struct AppState {
+    pub retry_attempts: usize,
     pub upstreams: Vec<UpstreamPool>,
 }
 
@@ -63,12 +64,13 @@ impl AppState {
                     id: upstream.id,
                     current_index: AtomicUsize::new(0),
                     algorithm: upstream.algorithm,
+
                     backends, // all backends belonging to a single upstream type ( single logical service)
                 }
             })
             .collect();
 
-        Self { upstreams }
+        Self { upstreams, retry_attempts: config.load_balancer.retry_attempts }
     }
 }
 

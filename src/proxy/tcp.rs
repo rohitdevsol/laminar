@@ -1,4 +1,3 @@
-use anyhow::Ok;
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
@@ -28,26 +27,52 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 }
 
 async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
-    let guard = {
+    let retry_attempt = {
         let state = state.read().await;
-        let upstream = &state.upstreams[0];
-        let backend_arc = match upstream.next_backend() {
-            Some(backend) => backend.clone(),
-            None => {
-                error!("no healthy backend available");
+        state.retry_attempts
+    };
+
+    // retry attempts mean how many times we should try
+    // connecting the client to a suitable backend server
+    //
+    // if a backend is available:
+    // route the traffic normally
+    //
+    // if connection fails:
+    // mark that backend unhealthy so future selections skip it
+    for _ in 0..retry_attempt {
+        let guard = {
+            let state = state.read().await;
+            let upstream = &state.upstreams[0];
+            let backend_arc = match upstream.next_backend() {
+                Some(backend) => backend,
+                None => {
+                    error!("no healthy backend available");
+                    return Ok(());
+                }
+            };
+            ConnectionGuard::new(backend_arc)
+            // format!("{}:{}", backend.config.host, backend.config.port)
+        };
+        let backend_address = guard.address();
+
+        info!("forwarding traffic to {}", backend_address);
+
+        match TcpStream::connect(&backend_address).await {
+            Ok(mut backend_stream) => {
+                copy_bidirectional(&mut stream, &mut backend_stream).await?;
                 return Ok(());
             }
-        };
-        ConnectionGuard::new(backend_arc)
-        // format!("{}:{}", backend.config.host, backend.config.port)
-    };
-    let backend_address = guard.address();
+            Err(error) => {
+                // this is very important ..
+                guard.mark_backend_unhealthy();
+                error!("failed to connect to backend {}: {:?}", backend_address, error);
 
-    info!("forwarding traffic to {}", backend_address);
-
-    let mut backend_stream = TcpStream::connect(&backend_address).await?;
-
-    copy_bidirectional(&mut stream, &mut backend_stream).await?;
-
+                // retry another
+                continue;
+            }
+        }
+    }
+    error!("all backend retry attempts failed");
     Ok(())
 }
