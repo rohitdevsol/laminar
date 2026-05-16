@@ -137,3 +137,29 @@ This creates a clean foundation for future improvements such as:
 - latency-aware health scoring
 - parallelized health probes
 - advanced balancing strategies
+
+---
+
+## 2026-05-16
+
+### Added
+
+- Added pluggable balancing algorithm structure
+- Added least-connections load balancing
+- Added configurable upstream balancing selection through YAML
+- Added dedicated algorithm modules for:
+  - round robin
+  - least connections
+- Added tests for least-connections backend selection
+
+### Changed
+
+- Refactored backend selection logic out of `UpstreamPool`
+- Reorganized balancing logic into isolated algorithm modules
+
+### Notes
+
+Laminar can now route traffic using runtime-aware balancing strategies instead of fixed request rotation.
+
+The current implementation intentionally keeps algorithm dispatch simple using enum matching and naive selection logic.
+More advanced balancing abstractions and optimizations will evolve later as additional strategies are introduced.
