@@ -16,7 +16,7 @@ fn create_backend(id: &str, port: u16) -> BackendState {
 
         healthy: AtomicBool::new(true),
 
-        active_connections: 0.into(),
+        active_connections: (0).into(),
 
         failed_health_checks: 0,
     }
@@ -26,9 +26,8 @@ fn create_backend(id: &str, port: u16) -> BackendState {
 fn round_robin_rotates_backends() {
     let upstream = UpstreamPool {
         id: "main".to_string(),
-
         current_index: (0).into(),
-
+        algorithm: laminar::config::LoadBalancingAlgorithm::RoundRobin,
         backends: vec![
             create_backend("server-1", 9001).into(),
             create_backend("server-2", 9002).into(),
