@@ -16,7 +16,7 @@ fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
 
         healthy: AtomicBool::new(healthy),
 
-        active_connections: 0.into(),
+        active_connections: (0).into(),
 
         failed_health_checks: 0,
     }
@@ -26,9 +26,8 @@ fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
 fn unhealthy_backend_is_skipped() {
     let upstream = UpstreamPool {
         id: "main".to_string(),
-
         current_index: (0).into(),
-
+        algorithm: laminar::config::LoadBalancingAlgorithm::LeastConnections,
         backends: vec![
             create_backend("dead", 9001, false).into(),
             create_backend("healthy", 9002, true).into(),
@@ -44,9 +43,8 @@ fn unhealthy_backend_is_skipped() {
 fn returns_none_when_all_backends_dead() {
     let upstream = UpstreamPool {
         id: "main".to_string(),
-
         current_index: (0).into(),
-
+        algorithm: laminar::config::LoadBalancingAlgorithm::LeastConnections,
         backends: vec![
             create_backend("dead-1", 9001, false).into(),
             create_backend("dead-2", 9002, false).into(),

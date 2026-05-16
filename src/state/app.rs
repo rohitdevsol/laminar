@@ -1,26 +1,32 @@
+use crate::algorithms::{least_connections, round_robin};
+use crate::config::LoadBalancingAlgorithm;
 use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::AtomicUsize;
 use tokio::sync::RwLock;
 // Contains all backend servers belonging to a single logical service.
 #[derive(Debug)]
 pub struct UpstreamPool {
     pub id: String,
     pub current_index: AtomicUsize,
+    pub algorithm: LoadBalancingAlgorithm,
     pub backends: Vec<Arc<BackendState>>,
 }
 
 impl UpstreamPool {
     // Very naive round robin.
     pub fn next_backend(&self) -> Option<Arc<BackendState>> {
-        for _ in 0..self.backends.len() {
-            let index = self.current_index.fetch_add(1, Ordering::Relaxed);
-            let backend = &self.backends[index % self.backends.len()];
-            if backend.healthy.load(Ordering::Relaxed) {
-                return Some(backend.clone());
+        match &self.algorithm {
+            LoadBalancingAlgorithm::RoundRobin => {
+                round_robin::select_backend(&self.backends, &self.current_index)
+            }
+            LoadBalancingAlgorithm::LeastConnections => {
+                least_connections::select_backend(&self.backends)
+            }
+            _ => {
+                unimplemented!("algorithm not implemented yet")
             }
         }
-        None
     }
 }
 // Central shared runtime state for the entire load balancer.
@@ -56,6 +62,7 @@ impl AppState {
                 UpstreamPool {
                     id: upstream.id,
                     current_index: AtomicUsize::new(0),
+                    algorithm: upstream.algorithm,
                     backends, // all backends belonging to a single upstream type ( single logical service)
                 }
             })
