@@ -1,6 +1,7 @@
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
+    time::timeout,
 };
 use tracing::{error, info};
 
@@ -27,9 +28,9 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 }
 
 async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
-    let retry_attempt = {
+    let (retry_attempt, connect_timeout, idle_timeout) = {
         let state = state.read().await;
-        state.retry_attempts
+        (state.retry_attempts, state.connect_timeout, state.idle_timeout)
     };
 
     // retry attempts mean how many times we should try
@@ -58,15 +59,28 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
 
         info!("forwarding traffic to {}", backend_address);
 
-        match TcpStream::connect(&backend_address).await {
-            Ok(mut backend_stream) => {
-                copy_bidirectional(&mut stream, &mut backend_stream).await?;
+        match timeout(connect_timeout, TcpStream::connect(&backend_address)).await {
+            Ok(Ok(mut backend_stream)) => {
+                if timeout(idle_timeout, copy_bidirectional(&mut stream, &mut backend_stream))
+                    .await
+                    .is_err()
+                {
+                    error!("connection with {} timed out (idle)", backend_address);
+                }
                 return Ok(());
             }
-            Err(error) => {
+            Ok(Err(error)) => {
                 // this is very important ..
                 guard.mark_backend_unhealthy();
                 error!("failed to connect to backend {}: {:?}", backend_address, error);
+
+                // retry another
+                continue;
+            }
+            Err(_) => {
+                // connection attempt timed out
+                guard.mark_backend_unhealthy();
+                error!("connection attempt to {} timed out", backend_address);
 
                 // retry another
                 continue;
