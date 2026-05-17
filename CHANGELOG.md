@@ -138,6 +138,31 @@ This creates a clean foundation for future improvements such as:
 - parallelized health probes
 - advanced balancing strategies
 
+## 2026-05-17
+
+### Added
+
+- Added configurable backend connection timeouts
+- Added configurable idle connection timeouts (connection reaper)
+- Added timeout support to TCP proxy logic using `tokio::time::timeout`
+- Added `connect_timeout_secs` and `idle_timeout_secs` to YAML configuration
+- Added duration-based timeout tracking in `AppState`
+
+### Changed
+
+- Refactored `src/proxy/tcp.rs` to wrap async operations with timeouts
+- Improved proxy error handling to distinguish between connection failures and timeouts
+- Updated `AppState` to pre-calculate `Duration` objects for timeouts
+
+### Notes
+
+Laminar is now significantly more resilient against "cascading failures" caused by slow or unresponsive backends.
+The implementation of connection and idle timeouts ensures that:
+
+- a "black hole" backend (dropping packets) won't hang the proxy task indefinitely
+- inactive or "dead" connections are automatically reaped to prevent resource exhaustion
+- failed connection attempts due to timeouts trigger automatic failover to the next healthy backend
+
 ---
 
 ## 2026-05-16
