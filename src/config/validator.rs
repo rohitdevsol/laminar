@@ -7,6 +7,14 @@ use std::collections::HashSet;
 // rather than causing runtime instability.
 
 pub fn validate_config(config: &Config) -> Result<()> {
+    if config.load_balancer.connect_timeout_secs == 0 {
+        bail!("connect_timeout_secs must be greater than 0");
+    }
+
+    if config.load_balancer.idle_timeout_secs == 0 {
+        bail!("idle_timeout_secs must be greater than 0");
+    }
+
     let mut upstream_ids = HashSet::new();
     for upstream in &config.upstreams {
         if upstream.servers.is_empty() {
