@@ -1,12 +1,12 @@
+use crate::state::app::SharedAppState;
+use crate::state::backend::ConnectionGuard;
+use std::time::Duration;
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
     time::timeout,
 };
 use tracing::{error, info};
-
-use crate::state::app::SharedAppState;
-use crate::state::backend::ConnectionGuard;
 
 pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let listener = TcpListener::bind(address).await?;
@@ -18,7 +18,6 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 
         info!("new client connected {}", client_address);
         let state = state.clone();
-
         tokio::spawn(async move {
             if let Err(error) = handle_connection(client_stream, state).await {
                 error!("connection handling failed {:?}", error)
@@ -59,34 +58,39 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
 
         info!("forwarding traffic to {}", backend_address);
 
-        match timeout(connect_timeout, TcpStream::connect(&backend_address)).await {
-            Ok(Ok(mut backend_stream)) => {
-                if timeout(idle_timeout, copy_bidirectional(&mut stream, &mut backend_stream))
-                    .await
-                    .is_err()
-                {
-                    error!("connection with {} timed out (idle)", backend_address);
-                }
+        match proxy_connection(&mut stream, &backend_address, connect_timeout, idle_timeout).await {
+            Ok(_) => {
                 return Ok(());
             }
-            Ok(Err(error)) => {
-                // this is very important ..
+            Err(error) => {
                 guard.mark_backend_unhealthy();
-                error!("failed to connect to backend {}: {:?}", backend_address, error);
-
-                // retry another
-                continue;
-            }
-            Err(_) => {
-                // connection attempt timed out
-                guard.mark_backend_unhealthy();
-                error!("connection attempt to {} timed out", backend_address);
-
-                // retry another
+                error!("backend {} failed: {:?}", backend_address, error);
                 continue;
             }
         }
     }
     error!("all backend retry attempts failed");
     Ok(())
+}
+
+async fn proxy_connection(
+    client_stream: &mut TcpStream,
+    backend_address: &str,
+    connect_timeout: Duration,
+    idle_timeout: Duration,
+) -> anyhow::Result<()> {
+    let mut backend_stream =
+        timeout(connect_timeout, TcpStream::connect(backend_address)).await??;
+
+    match timeout(idle_timeout, copy_bidirectional(client_stream, &mut backend_stream)).await {
+        Ok(Ok(_)) => Ok(()),
+
+        Ok(Err(error)) => {
+            anyhow::bail!("proxy IO error: {error}");
+        }
+
+        Err(_) => {
+            anyhow::bail!("connection idle timeout");
+        }
+    }
 }

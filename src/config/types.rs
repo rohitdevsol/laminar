@@ -26,7 +26,6 @@ pub struct ServerConfig {
 pub struct LoadBalancerConfig {
     pub retry_attempts: usize,
     pub sticky_sessions: bool,
-
     pub health_check_interval_secs: u64,
     pub connect_timeout_secs: u64,
     pub idle_timeout_secs: u64,

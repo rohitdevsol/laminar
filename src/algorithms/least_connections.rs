@@ -1,6 +1,5 @@
-use std::sync::{Arc, atomic::Ordering};
-
 use crate::state::backend::BackendState;
+use std::sync::{Arc, atomic::Ordering};
 
 pub fn select_backend(backends: &[Arc<BackendState>]) -> Option<Arc<BackendState>> {
     // prev and curr approach
