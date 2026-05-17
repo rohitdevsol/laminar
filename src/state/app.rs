@@ -3,6 +3,7 @@ use crate::config::LoadBalancingAlgorithm;
 use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
+use std::time::Duration;
 use tokio::sync::RwLock;
 // Contains all backend servers belonging to a single logical service.
 #[derive(Debug)]
@@ -40,6 +41,8 @@ impl UpstreamPool {
 pub struct AppState {
     pub retry_attempts: usize,
     pub upstreams: Vec<UpstreamPool>,
+    pub connect_timeout: Duration,
+    pub idle_timeout: Duration,
 }
 
 pub type SharedAppState = Arc<RwLock<AppState>>;
@@ -70,7 +73,12 @@ impl AppState {
             })
             .collect();
 
-        Self { upstreams, retry_attempts: config.load_balancer.retry_attempts }
+        Self {
+            upstreams,
+            retry_attempts: config.load_balancer.retry_attempts,
+            connect_timeout: Duration::from_secs(config.load_balancer.connect_timeout_secs),
+            idle_timeout: Duration::from_secs(config.load_balancer.idle_timeout_secs),
+        }
     }
 }
 

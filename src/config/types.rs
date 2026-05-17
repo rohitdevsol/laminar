@@ -28,6 +28,8 @@ pub struct LoadBalancerConfig {
     pub sticky_sessions: bool,
 
     pub health_check_interval_secs: u64,
+    pub connect_timeout_secs: u64,
+    pub idle_timeout_secs: u64,
 }
 
 // Static backend server definition loaded from configuration.
