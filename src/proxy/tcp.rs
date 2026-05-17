@@ -26,7 +26,7 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
     }
 }
 
-async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
+pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
     let (retry_attempt, connect_timeout, idle_timeout) = {
         let state = state.read().await;
         (state.retry_attempts, state.connect_timeout, state.idle_timeout)

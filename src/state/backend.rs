@@ -65,4 +65,8 @@ impl BackendState {
             failed_health_checks: 0,
         }
     }
+
+    pub fn is_healthy(&self) -> bool {
+        self.healthy.load(Ordering::Relaxed)
+    }
 }
