@@ -37,8 +37,8 @@
 - [x] Forward backend → client traffic
 - [x] Support bidirectional forwarding
 - [x] Handle disconnect propagation
-- [ ] Add connection timeout handling
-- [ ] Add idle timeout handling
+- [x] Add connection timeout handling
+- [x] Add idle timeout handling
 
 ---
 
@@ -116,8 +116,8 @@
 
 ## Timeout Management
 
-- [ ] Backend connect timeout
-- [ ] Idle connection timeout
+- [x] Backend connect timeout
+- [x] Idle connection timeout
 - [ ] Read timeout
 - [ ] Write timeout
 
