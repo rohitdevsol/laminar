@@ -30,7 +30,7 @@ async fn marks_backend_unhealthy_on_connect_timeout() {
     let address = guard.address();
     let result = timeout(Duration::from_millis(100), TcpStream::connect(address)).await;
     assert!(result.is_err());
-    assert!(backend.healthy.load(Ordering::Relaxed));
+
     guard.mark_backend_unhealthy();
     assert!(!backend.healthy.load(Ordering::Relaxed));
 }

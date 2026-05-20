@@ -19,10 +19,14 @@
 
 - [x] Create listening socket
 - [x] Bind address/port
+- [ ] Configure socket options
+  - [ ] SO_REUSEADDR
+  - [ ] TCP_NODELAY
+  - [ ] Keepalive
 - [x] Implement accept loop
 - [x] Handle concurrent client connections
 - [x] Handle client disconnects
-- [x] Implement connection cleanup
+- [ ] Implement connection cleanup
 
 ---
 
@@ -42,7 +46,7 @@
 
 - [x] Implement backend registry
 - [x] Track backend runtime state
-- [x] Add backend availability tracking
+- [ ] Add backend availability tracking
 - [x] Implement backend selection interface
 
 ---
@@ -80,7 +84,7 @@
 
 - [x] Create background health task
 - [x] Add configurable health intervals
-- [x] Add backend recovery detection
+- [ ] Add backend recovery detection
 
 ---
 
@@ -103,10 +107,10 @@
 
 ## Retry Logic
 
-- [x] Retry failed backend connections
-- [x] Retry next available backend
-- [x] Add retry limits
-- [x] Add retry logging
+- [ ] Retry failed backend connections
+- [ ] Retry next available backend
+- [ ] Add retry limits
+- [ ] Add retry logging
 
 ---
 
@@ -121,19 +125,20 @@
 
 ## Runtime State Refactor
 
-- [x] Reduce lock scope sizes
-- [x] Separate balancing module
-- [x] Separate health module
-- [x] Improve state ownership model
+- [ ] Reduce lock scope sizes
+- [ ] Refactor duplicated runtime logic
+- [ ] Separate balancing module
+- [ ] Separate health module
+- [ ] Improve state ownership model
 
 ---
 
 ## Phase 2 Deliverable
 
-- [x] Health-aware balancing
-- [x] Retry support
-- [x] Connection metrics
-- [x] Runtime stability improvements
+- [ ] Health-aware balancing
+- [ ] Retry support
+- [ ] Connection metrics
+- [ ] Runtime stability improvements
 
 ---
 
@@ -169,9 +174,9 @@
 
 - [ ] Structured JSON logs
 - [ ] Request correlation IDs
-- [x] Retry logging
-- [x] Timeout logging
-- [x] Backend transition logging
+- [ ] Retry logging
+- [ ] Timeout logging
+- [ ] Backend transition logging
 
 ---
 
@@ -214,6 +219,9 @@
 
 ## Event-Driven Runtime
 
+- [ ] Integrate epoll
+- [ ] Add edge-triggered events
+- [ ] Implement event batching
 - [ ] Add worker thread model
 
 ---
