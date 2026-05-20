@@ -3,7 +3,7 @@ use anyhow::{Result, bail};
 use std::collections::HashSet;
 
 // The load balancer follows a fail-fast startup philosophy.
-// Invalid topology or malformed configuration should prevent startup
+// Invalid configuration should prevent startup
 // rather than causing runtime instability.
 
 pub fn validate_config(config: &Config) -> Result<()> {

@@ -129,7 +129,7 @@
 - [ ] Refactor duplicated runtime logic
 - [ ] Separate balancing module
 - [ ] Separate health module
-- [*] Improve state ownership model
+- [ ] Improve state ownership model
 
 ---
 

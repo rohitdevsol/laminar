@@ -31,15 +31,19 @@ pub async fn check_backend_status(backend: &BackendState) -> Result<()> {
 
 pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
     loop {
-        let state = state.read().await;
-        for upstream in &state.upstreams {
-            for backend in &upstream.backends {
-                let _ = check_backend_status(backend).await;
-            }
+        let backends = {
+            let state = state.read().await;
+
+            state
+                .upstreams
+                .iter()
+                .flat_map(|upstream| upstream.backends.clone())
+                .collect::<Vec<_>>()
+        };
+        for backend in backends {
+            let _ = check_backend_status(&backend).await;
         }
 
-        // releasing the lock before going to sleep ..
-        drop(state);
         sleep(Duration::from_secs(interval_secs)).await;
     }
 }
