@@ -11,7 +11,7 @@
 - [x] Define configuration format
 - [x] Create runtime AppState
 - [x] Define backend configuration model
-- [ ] Setup graceful shutdown handling
+- [x] Setup graceful shutdown handling
 
 ---
 

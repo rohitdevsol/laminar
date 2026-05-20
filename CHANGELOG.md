@@ -207,14 +207,25 @@ More advanced balancing abstractions and optimizations will evolve later as addi
   - backend ownership model
   - shared state relationships
   - YAML configuration flow
+- Added graceful shutdown handling
+  - Added `Ctrl+C` signal interception in `main`
+  - Added shutdown signaling via `tokio::sync::watch` to proxy and health tasks
+  - Added connection draining logic to wait for active connections to finish before exit
+  - Added `total_connections` metric to `AppState` for shutdown synchronization
 
 ### Changed
 
-- Refactored proxy connection handling into isolated helper flow
-- Improved timeout and proxy error logging with clearer runtime context
-- Reduced health checker lock scope to avoid holding shared state locks across async network operations
-- Improved retry logging with backend-aware runtime details
-- Cleaned up retry flow readability and connection orchestration structure
+- Refactored `start_tcp_proxy` and `start_health_checker` to support clean task cancellation
+- Improved main entry point to orchestrate a multi-stage shutdown sequence
+
+### Notes
+
+Laminar now supports production-grade graceful shutdowns.
+When a shutdown signal (like `SIGINT` or `Ctrl+C`) is received:
+1. The proxy immediately stops accepting new client connections.
+2. The health checker stops background probing.
+3. The application monitors active connections and waits for them to close naturally.
+4. The process exits only once all traffic has been drained, ensuring no client requests are abruptly terminated.
 
 ### Notes
 

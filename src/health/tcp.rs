@@ -2,7 +2,7 @@ use std::{sync::atomic::Ordering, time::Duration};
 
 use crate::state::{app::SharedAppState, backend::BackendState};
 use anyhow::Result;
-use tokio::{net::TcpStream, time::sleep};
+use tokio::{net::TcpStream, sync::watch, time::sleep};
 use tracing::{info, warn};
 
 // This will evolve later into:
@@ -29,7 +29,11 @@ pub async fn check_backend_status(backend: &BackendState) -> Result<()> {
     Ok(())
 }
 
-pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
+pub async fn start_health_checker(
+    state: SharedAppState,
+    interval_secs: u64,
+    mut shutdown_rx: watch::Receiver<bool>,
+) {
     loop {
         let backends = {
             let state = state.read().await;
@@ -44,6 +48,12 @@ pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
             let _ = check_backend_status(&backend).await;
         }
 
-        sleep(Duration::from_secs(interval_secs)).await;
+        tokio::select! {
+            _ = sleep(Duration::from_secs(interval_secs)) => {}
+            _ = shutdown_rx.changed() => {
+                info!("stopping health checker");
+                break;
+            }
+        }
     }
 }

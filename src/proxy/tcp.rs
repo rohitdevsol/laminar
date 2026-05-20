@@ -4,26 +4,39 @@ use std::{collections::HashSet, time::Duration};
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
+    sync::watch,
     time::timeout,
 };
 use tracing::{error, info};
 
-pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Result<()> {
+pub async fn start_tcp_proxy(
+    address: &str,
+    state: SharedAppState,
+    mut shutdown_rx: watch::Receiver<bool>,
+) -> anyhow::Result<()> {
     let listener = TcpListener::bind(address).await?;
 
     info!("tcp proxy listening on {}", address);
 
     loop {
-        let (client_stream, client_address) = listener.accept().await?;
-
-        info!("new client connected {}", client_address);
-        let state = state.clone();
-        tokio::spawn(async move {
-            if let Err(error) = handle_connection(client_stream, state).await {
-                error!("connection handling failed {:?}", error)
+        tokio::select! {
+            accept_res = listener.accept() => {
+                let (client_stream, client_address) = accept_res?;
+                info!("new client connected {}", client_address);
+                let state = state.clone();
+                tokio::spawn(async move {
+                    if let Err(error) = handle_connection(client_stream, state).await {
+                        error!("connection handling failed {:?}", error)
+                    }
+                });
             }
-        });
+            _ = shutdown_rx.changed() => {
+                info!("stopping accept loop");
+                break;
+            }
+        }
     }
+    Ok(())
 }
 
 pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {

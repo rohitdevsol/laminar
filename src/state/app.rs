@@ -49,17 +49,10 @@ pub type SharedAppState = Arc<RwLock<AppState>>;
 
 impl AppState {
     pub fn build(config: Config) -> Self {
-        // config.upstreams is a grouped collection of upstreams
-        // each upstream has an id, algorithm and servers( yes group of servers)
-        // each server has id, host, port, weight
-
         let upstreams = config
             .upstreams
             .into_iter()
             .map(|upstream| {
-                // upstream has id, algorithm and servers
-                // BackendState.config is of same type as a server
-
                 let backends =
                     upstream.servers.into_iter().map(|s| Arc::new(BackendState::new(s))).collect();
 
@@ -67,8 +60,7 @@ impl AppState {
                     id: upstream.id,
                     current_index: AtomicUsize::new(0),
                     algorithm: upstream.algorithm,
-
-                    backends, // all backends belonging to a single upstream type ( single logical service)
+                    backends,
                 }
             })
             .collect();
@@ -80,39 +72,12 @@ impl AppState {
             idle_timeout: Duration::from_secs(config.load_balancer.idle_timeout_secs),
         }
     }
-}
 
-// How will the AppState look in the end ( just a sample )
-/*
-  AppState {
-    upstreams: [
-        UpstreamPool {
-            id: "main",
-            backends: [
-                BackendState {
-                    config: BackendServerConfig {
-                        id: "server-1",
-                        host: "127.0.0.1",
-                        port: 9001,
-                        weight: 1,
-                    },
-                    healthy: true,
-                    active_connections: 0,
-                    failed_health_checks: 0,
-                },
-                BackendState {
-                    config: BackendServerConfig {
-                        id: "server-2",
-                        host: "127.0.0.1",
-                        port: 9002,
-                        weight: 1,
-                    },
-                    healthy: true,
-                    active_connections: 0,
-                    failed_health_checks: 0,
-                },
-            ],
-        },
-    ],
+    pub fn total_connections(&self) -> usize {
+        self.upstreams
+            .iter()
+            .flat_map(|u| &u.backends)
+            .map(|b| b.active_connections.load(std::sync::atomic::Ordering::Relaxed))
+            .sum()
+    }
 }
- */
