@@ -1,6 +1,6 @@
 use crate::state::app::SharedAppState;
 use crate::state::backend::ConnectionGuard;
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 use tokio::{
     io::copy_bidirectional,
     net::{TcpListener, TcpStream},
@@ -32,6 +32,8 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
         (state.retry_attempts, state.connect_timeout, state.idle_timeout)
     };
 
+    let mut attempted_backends = HashSet::new();
+
     // retry attempts mean how many times we should try
     // connecting the client to a suitable backend server
     //
@@ -55,6 +57,9 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
             // format!("{}:{}", backend.config.host, backend.config.port)
         };
         let backend_address = guard.address();
+        if attempted_backends.contains(guard.backend_id()) {
+            continue;
+        }
 
         info!("forwarding traffic to {}", backend_address);
 
@@ -64,7 +69,8 @@ async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyh
             }
             Err(error) => {
                 guard.mark_backend_unhealthy();
-                error!("backend {} failed: {:?}", backend_address, error);
+                error!(backend_id = %guard.backend_id(),backend = %backend_address,attempt = attempted_backends.len() + 1,"backend request failed: {:?}",error);
+                attempted_backends.insert(guard.backend_id().to_string());
                 continue;
             }
         }
