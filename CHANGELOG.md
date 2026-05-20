@@ -188,3 +188,51 @@ Laminar can now route traffic using runtime-aware balancing strategies instead o
 
 The current implementation intentionally keeps algorithm dispatch simple using enum matching and naive selection logic.
 More advanced balancing abstractions and optimizations will evolve later as additional strategies are introduced.
+
+---
+
+## 2026-05-20
+
+### Added
+
+- Added retry stabilization to avoid retrying already-failed backends during a single request lifecycle
+- Added runtime behavior tests for:
+  - connection guard lifecycle tracking
+  - timeout-based unhealthy backend handling
+  - retry stabilization behavior
+- Added backend recovery logging for healthy state transitions
+- Added Excalidraw runtime architecture diagram to README
+- Added visual documentation for:
+  - runtime structs
+  - backend ownership model
+  - shared state relationships
+  - YAML configuration flow
+
+### Changed
+
+- Refactored proxy connection handling into isolated helper flow
+- Improved timeout and proxy error logging with clearer runtime context
+- Reduced health checker lock scope to avoid holding shared state locks across async network operations
+- Improved retry logging with backend-aware runtime details
+- Cleaned up retry flow readability and connection orchestration structure
+
+### Notes
+
+This phase focused heavily on runtime stability, observability, and internal architecture clarity.
+
+Laminar now has stronger runtime behavior guarantees around:
+
+- retry isolation
+- backend failover handling
+- timeout-aware connection management
+- async-safe shared state access
+- connection lifecycle tracking
+
+The runtime architecture documentation was also expanded to better explain how:
+
+- `AppState`
+- `UpstreamPool`
+- `BackendState`
+- `ConnectionGuard`
+
+interact during live traffic routing and health monitoring.
