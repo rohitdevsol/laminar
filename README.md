@@ -11,6 +11,8 @@ The project focuses on building modern load balancing infrastructure from first 
 
 This repository is intentionally developed in stages, starting from a minimal working implementation and progressively evolving toward production-grade infrastructure.
 
+<img width="2044" height="1062" alt="Screenshot 2026-05-20 at 10 19 10 AM" src="https://github.com/user-attachments/assets/d5b9b3da-420d-4b10-b502-be1c62a120a7" />
+
 ---
 
 # Current Features
@@ -91,6 +93,7 @@ make release
 ```
 
 ---
+
 
 # Development Workflow
 
