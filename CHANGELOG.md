@@ -236,3 +236,44 @@ The runtime architecture documentation was also expanded to better explain how:
 - `ConnectionGuard`
 
 interact during live traffic routing and health monitoring.
+
+---
+
+## 2026-06-05
+
+### Added
+
+- Added Prometheus metrics exporter
+- Added `/prometheus` runtime metrics endpoint
+- Added backend-specific Prometheus metrics
+- Added structured JSON runtime logging
+- Added request correlation IDs using UUIDs
+- Added graceful TCP proxy shutdown handling
+- Added backend draining support
+- Added draining-aware backend selection
+- Added runtime request and failure metrics
+- Added Prometheus active connection gauges
+
+### Changed
+
+- Refactored proxy connection lifecycle logging
+- Improved structured tracing across retries and request flow
+- Improved backend runtime observability
+- Improved connection accounting using Prometheus gauges
+- Improved backend lifecycle management semantics
+- Cleaned up proxy retry orchestration flow
+
+### Notes
+
+This phase focused heavily on operational observability and runtime lifecycle management.
+
+Laminar now supports:
+
+- Prometheus-compatible metrics
+- structured request tracing
+- graceful shutdown handling
+- backend draining
+- runtime traffic visibility
+- backend-aware operational telemetry
+
+The runtime now behaves more like an operational load balancing system with live observability and traffic management capabilities.
