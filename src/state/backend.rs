@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 // use std::sync::Arc;
 // use tokio::sync::RwLock;
 use crate::config::BackendServerConfig;
-
+use crate::metrics::registry::ACTIVE_CONNECTIONS;
 pub struct ConnectionGuard {
     // We hold an Arc so backend state stays alive
     // for the lifetime of the connection.
@@ -38,6 +38,7 @@ impl ConnectionGuard {
     pub fn new(backend: Arc<BackendState>) -> Self {
         // Increment immediately upon creation
         backend.active_connections.fetch_add(1, Ordering::Relaxed);
+        ACTIVE_CONNECTIONS.get().unwrap().with_label_values(&[&backend.config.id]).inc();
         Self { backend }
     }
 
@@ -60,6 +61,7 @@ impl ConnectionGuard {
 impl Drop for ConnectionGuard {
     fn drop(&mut self) {
         self.backend.active_connections.fetch_sub(1, Ordering::Relaxed);
+        ACTIVE_CONNECTIONS.get().unwrap().with_label_values(&[&self.backend.config.id]).dec();
     }
 }
 

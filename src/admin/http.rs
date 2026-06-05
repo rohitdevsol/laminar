@@ -1,12 +1,11 @@
-use std::sync::atomic::Ordering;
-
+use crate::{metrics::registry::gather_metrics, state::app::SharedAppState};
 use axum::{
     Json, Router,
     extract::{Path, State},
     routing::{get, post},
 };
+use std::sync::atomic::Ordering;
 
-use laminar::state::app::SharedAppState;
 use serde::Serialize;
 use tokio::net::TcpListener;
 
@@ -30,6 +29,10 @@ struct UpstreamMetrics {
 #[derive(Serialize)]
 struct MetricsResponse {
     upstreams: Vec<UpstreamMetrics>,
+}
+
+async fn prometheus_handler() -> String {
+    gather_metrics()
 }
 
 async fn metrics_handler(State(state): State<SharedAppState>) -> Json<MetricsResponse> {
@@ -91,6 +94,7 @@ pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow:
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
         .route("/backend/{id}/drain", post(drain_backend_handler))
+        .route("/prometheus", get(prometheus_handler))
         .with_state(state);
     let listener = TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;
