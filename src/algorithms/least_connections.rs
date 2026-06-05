@@ -8,7 +8,7 @@ pub fn select_backend(backends: &[Arc<BackendState>]) -> Option<Arc<BackendState
 
     for backend in backends {
         //check if this backend is healthy
-        if backend.healthy.load(Ordering::Relaxed) && !backend.draining.load(Ordering::Relaxed) {
+        if !backend.healthy.load(Ordering::Relaxed) || backend.draining.load(Ordering::Relaxed) {
             continue;
         }
 

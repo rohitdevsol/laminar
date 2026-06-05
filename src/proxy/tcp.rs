@@ -101,12 +101,16 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
                     backend_id = %guard.backend_id(),
                     "request completed"
                 );
-                TOTAL_REQUESTS.get().unwrap().with_label_values(&[guard.backend_id()]).inc();
+                if let Some(metrics) = TOTAL_REQUESTS.get() {
+                    metrics.with_label_values(&[guard.backend_id()]).inc();
+                }
                 guard.backend().increment_total_requests();
                 return Ok(());
             }
             Err(error) => {
-                FAILED_REQUESTS.get().unwrap().with_label_values(&[guard.backend_id()]).inc();
+                if let Some(metrics) = FAILED_REQUESTS.get() {
+                    metrics.with_label_values(&[guard.backend_id()]).inc();
+                }
                 guard.backend().increment_failed_requests();
                 guard.mark_backend_unhealthy();
                 error!(
