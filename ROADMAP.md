@@ -148,12 +148,12 @@
 
 ## Metrics
 
-- [ ] Active connection metrics
+- [x] Active connection metrics
 - [ ] Request counters
-- [ ] Failure counters
-- [ ] Backend health metrics
+- [x] Failure counters
+- [x] Backend health metrics
 - [ ] Throughput metrics
-- [ ] Track total requests
+- [x] Track total requests
 
 ---
 
@@ -167,8 +167,8 @@
 
 ## Logging Improvements
 
-- [ ] Structured JSON logs
-- [ ] Request correlation IDs
+- [x] Structured JSON logs
+- [x] Request correlation IDs
 - [x] Retry logging
 - [x] Timeout logging
 - [x] Backend transition logging
@@ -198,7 +198,7 @@
 - [ ] Add runtime status endpoint
 - [ ] Add backend health endpoint
 - [ ] Add backend enable/disable API
-- [ ] Add metrics endpoint
+- [x] Add metrics endpoint
 
 ---
 
