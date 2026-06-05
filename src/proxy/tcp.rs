@@ -1,3 +1,4 @@
+use crate::common::shutdown::shutdown_signal;
 use crate::state::app::SharedAppState;
 use crate::state::backend::ConnectionGuard;
 use std::{collections::HashSet, time::Duration};
@@ -7,6 +8,7 @@ use tokio::{
     time::timeout,
 };
 use tracing::{error, info};
+use uuid::Uuid;
 
 pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let listener = TcpListener::bind(address).await?;
@@ -14,19 +16,35 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
     info!("tcp proxy listening on {}", address);
 
     loop {
-        let (client_stream, client_address) = listener.accept().await?;
-
-        info!("new client connected {}", client_address);
-        let state = state.clone();
-        tokio::spawn(async move {
-            if let Err(error) = handle_connection(client_stream, state).await {
-                error!("connection handling failed {:?}", error)
+        tokio::select! {
+            result = listener.accept() => {
+                let (client_stream, client_address) = result?;
+                info!(
+                    client = %client_address,
+                    "new client connected"
+                );
+                let state = state.clone();
+                tokio::spawn(async move {
+                    if let Err(error) = handle_connection(client_stream,state).await
+                    {
+                        error!("connection handling failed {:?}",error);
+                    }
+                });
             }
-        });
+
+            _ = shutdown_signal() => {
+                info!("tcp proxy shutting down");
+                break;
+            }
+        }
     }
+    info!("tcp proxy stopped accepting new connections");
+
+    Ok(())
 }
 
 pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
+    let request_id = Uuid::new_v4();
     let (retry_attempt, connect_timeout, idle_timeout) = {
         let state = state.read().await;
         (state.retry_attempts, state.connect_timeout, state.idle_timeout)
@@ -49,7 +67,10 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
             let backend_arc = match upstream.next_backend() {
                 Some(backend) => backend,
                 None => {
-                    error!("no healthy backend available");
+                    error!(
+                        request_id = %request_id,
+                        "no healthy backend available"
+                    );
                     return Ok(());
                 }
             };
@@ -61,15 +82,34 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
             continue;
         }
 
-        info!("forwarding traffic to {}", backend_address);
+        info!(
+            request_id = %request_id,
+            backend_id = %guard.backend_id(),
+            backend = %backend_address,
+            "forwarding traffic"
+        );
 
         match proxy_connection(&mut stream, &backend_address, connect_timeout, idle_timeout).await {
             Ok(_) => {
+                info!(
+                    request_id = %request_id,
+                    backend_id = %guard.backend_id(),
+                    "request completed"
+                );
+                guard.backend().increment_total_requests();
                 return Ok(());
             }
             Err(error) => {
+                guard.backend().increment_failed_requests();
                 guard.mark_backend_unhealthy();
-                error!(backend_id = %guard.backend_id(),backend = %backend_address,attempt = attempted_backends.len() + 1,"backend request failed: {:?}",error);
+                error!(
+                    request_id = %request_id,
+                    backend_id = %guard.backend_id(),
+                    backend = %backend_address,
+                    attempt = attempted_backends.len() + 1,
+                    error = %error,
+                    "backend request failed"
+                );
                 attempted_backends.insert(guard.backend_id().to_string());
                 continue;
             }

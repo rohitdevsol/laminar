@@ -1,4 +1,4 @@
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicUsize};
 
 use laminar::{
     config::types::BackendServerConfig,
@@ -15,10 +15,10 @@ fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
         },
 
         healthy: AtomicBool::new(healthy),
-
         active_connections: (0).into(),
-
         failed_health_checks: 0,
+        failed_requests: AtomicUsize::new(0),
+        total_requests: AtomicUsize::new(0),
     }
 }
 

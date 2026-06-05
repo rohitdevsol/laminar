@@ -24,6 +24,8 @@ fn create_backend(
         healthy: AtomicBool::new(healthy),
         active_connections: AtomicUsize::new(active_connections),
         failed_health_checks: 0,
+        failed_requests: AtomicUsize::new(0),
+        total_requests: AtomicUsize::new(0),
     })
 }
 

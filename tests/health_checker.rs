@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use tokio::net::TcpListener;
 
@@ -17,10 +17,10 @@ fn create_backend(port: u16) -> BackendState {
         },
 
         healthy: AtomicBool::new(false),
-
-        active_connections: 0.into(),
-
+        active_connections: (0).into(),
         failed_health_checks: 0,
+        failed_requests: AtomicUsize::new(0),
+        total_requests: AtomicUsize::new(0),
     }
 }
 

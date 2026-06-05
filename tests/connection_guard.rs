@@ -20,6 +20,8 @@ fn connection_guard_tracks_active_connections() {
         healthy: AtomicBool::new(true),
         active_connections: AtomicUsize::new(0),
         failed_health_checks: 0,
+        failed_requests: AtomicUsize::new(0),
+        total_requests: AtomicUsize::new(0),
     });
 
     assert_eq!(backend.active_connections.load(Ordering::Relaxed), 0);
