@@ -89,7 +89,6 @@
 - [x] Track active connections per backend
 - [x] Increment on connect
 - [x] Decrement on disconnect
-- [ ] Track total requests
 
 ---
 
@@ -154,6 +153,7 @@
 - [ ] Failure counters
 - [ ] Backend health metrics
 - [ ] Throughput metrics
+- [ ] Track total requests
 
 ---
 

@@ -1,6 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
-
+mod admin;
 use anyhow::{Result, bail};
 use laminar::{
     config::{loader::load_config, validator::validate_config},
@@ -36,11 +36,15 @@ async fn main() -> Result<()> {
     }
 
     let shared_state: SharedAppState = Arc::new(RwLock::new(state));
-    // for upstream in &state.upstreams {
-    //     info!("upstream '{}' initialized with {} backends", upstream.id, upstream.backends.len());
-    // }
 
     let health_state = shared_state.clone();
+    let admin_state = shared_state.clone();
+
+    tokio::spawn(async move {
+        if let Err(error) = admin::http::start_admin_server("127.0.0.1:9090", admin_state).await {
+            tracing::error!("admin server failed: {:?}", error);
+        }
+    });
     tokio::spawn(async move {
         start_health_checker(health_state, health_interval).await;
     });
