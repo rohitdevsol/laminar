@@ -12,7 +12,7 @@ pub fn select_backend(
     let mut weighted = Vec::new();
 
     for backend in backends {
-        if !backend.healthy.load(Ordering::Relaxed) || backend.draining.load(Ordering::Relaxed) {
+        if !backend.is_routable() {
             continue;
         }
 
