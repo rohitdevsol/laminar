@@ -1,4 +1,6 @@
-use crate::{metrics::registry::gather_metrics, state::app::SharedAppState};
+use crate::{
+    admin::reload::reload_config, metrics::registry::gather_metrics, state::app::SharedAppState,
+};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -90,11 +92,27 @@ async fn drain_backend_handler(
     format!("backend '{id}' not found")
 }
 
+async fn reload_handler(State(state): State<SharedAppState>) -> String {
+    match reload_config(state).await {
+        Ok(_) => "config reloaded".into(),
+
+        Err(error) => {
+            tracing::error!(
+                error = %error,
+                "config reload failed"
+            );
+
+            format!("reload failed: {error}")
+        }
+    }
+}
+
 pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
         .route("/backend/{id}/drain", post(drain_backend_handler))
         .route("/prometheus", get(prometheus_handler))
+        .route("/reload", post(reload_handler))
         .with_state(state);
     let listener = TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;

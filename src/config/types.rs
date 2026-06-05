@@ -34,7 +34,7 @@ pub struct LoadBalancerConfig {
 // Static backend server definition loaded from configuration.
 // This only contains immutable backend metadata.
 // Live runtime information is tracked separately in "BackendState".
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct BackendServerConfig {
     pub id: String,
     pub host: String,

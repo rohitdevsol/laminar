@@ -43,12 +43,13 @@ pub struct AppState {
     pub upstreams: Vec<UpstreamPool>,
     pub connect_timeout: Duration,
     pub idle_timeout: Duration,
+    pub config_path: String,
 }
 
 pub type SharedAppState = Arc<RwLock<AppState>>;
 
 impl AppState {
-    pub fn build(config: Config) -> Self {
+    pub fn build(config: Config, config_path: String) -> Self {
         // config.upstreams is a grouped collection of upstreams
         // each upstream has an id, algorithm and servers( yes group of servers)
         // each server has id, host, port, weight
@@ -78,6 +79,7 @@ impl AppState {
             retry_attempts: config.load_balancer.retry_attempts,
             connect_timeout: Duration::from_secs(config.load_balancer.connect_timeout_secs),
             idle_timeout: Duration::from_secs(config.load_balancer.idle_timeout_secs),
+            config_path,
         }
     }
 }

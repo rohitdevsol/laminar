@@ -40,10 +40,27 @@ pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
                 .flat_map(|upstream| upstream.backends.clone())
                 .collect::<Vec<_>>()
         };
+        let mut removable_backend_ids = Vec::new();
+
         for backend in backends {
             let _ = check_backend_status(&backend).await;
             if backend.is_draining() && backend.active_connections.load(Ordering::Relaxed) == 0 {
                 info!(backend_id =%backend.config.id,"backend safe to remove");
+                removable_backend_ids.push(backend.config.id.clone());
+            }
+        }
+
+        if !removable_backend_ids.is_empty() {
+            let mut state = state.write().await;
+
+            for upstream in &mut state.upstreams {
+                upstream.backends.retain(|backend| {
+                    let should_remove = removable_backend_ids.contains(&backend.config.id);
+                    if should_remove {
+                        info!(backend_id =%backend.config.id,"backend removed from runtime");
+                    }
+                    !should_remove
+                });
             }
         }
 

@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
 
     let health_interval = config.load_balancer.health_check_interval_secs;
 
-    let state = AppState::build(config);
+    let state = AppState::build(config, path.clone());
     info!("initialized {} upstream pools", state.upstreams.len());
     if state.upstreams.is_empty() {
         bail!("no upstreams configured");
