@@ -22,6 +22,7 @@ fn unhealthy_backend_is_not_selected_again() {
         failed_health_checks: 0,
         failed_requests: AtomicUsize::new(0),
         total_requests: AtomicUsize::new(0),
+        draining: AtomicBool::new(false),
     });
 
     let backend_2 = Arc::new(BackendState {
@@ -37,6 +38,7 @@ fn unhealthy_backend_is_not_selected_again() {
         failed_health_checks: 0,
         failed_requests: AtomicUsize::new(0),
         total_requests: AtomicUsize::new(0),
+        draining: AtomicBool::new(false),
     });
 
     let backends = vec![backend_1, backend_2.clone()];

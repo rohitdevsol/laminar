@@ -42,6 +42,9 @@ pub async fn start_health_checker(state: SharedAppState, interval_secs: u64) {
         };
         for backend in backends {
             let _ = check_backend_status(&backend).await;
+            if backend.is_draining() && backend.active_connections.load(Ordering::Relaxed) == 0 {
+                info!(backend_id =%backend.config.id,"backend safe to remove");
+            }
         }
 
         sleep(Duration::from_secs(interval_secs)).await;

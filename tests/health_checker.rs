@@ -21,6 +21,7 @@ fn create_backend(port: u16) -> BackendState {
         failed_health_checks: 0,
         failed_requests: AtomicUsize::new(0),
         total_requests: AtomicUsize::new(0),
+        draining: AtomicBool::new(false),
     }
 }
 

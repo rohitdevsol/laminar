@@ -30,6 +30,8 @@ pub struct BackendState {
 
     pub total_requests: AtomicUsize,
     pub failed_requests: AtomicUsize,
+
+    pub draining: AtomicBool,
 }
 
 impl ConnectionGuard {
@@ -68,6 +70,7 @@ impl BackendState {
         Self {
             config,
             healthy: AtomicBool::new(true),
+            draining: AtomicBool::new(false),
             active_connections: AtomicUsize::new(0),
             failed_health_checks: 0,
             total_requests: AtomicUsize::new(0),
@@ -81,6 +84,14 @@ impl BackendState {
 
     pub fn increment_failed_requests(&self) {
         self.failed_requests.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn mark_draining(&self) {
+        self.draining.store(true, Ordering::Relaxed);
+    }
+
+    pub fn is_draining(&self) -> bool {
+        self.draining.load(Ordering::Relaxed)
     }
 
     pub fn is_healthy(&self) -> bool {
