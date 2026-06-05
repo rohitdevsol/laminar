@@ -12,7 +12,7 @@ pub fn select_backend(
     for _ in 0..backends.len() {
         let index = current_index.fetch_add(1, Ordering::Relaxed);
         let backend = &backends[index % backends.len()];
-        if backend.healthy.load(Ordering::Relaxed) {
+        if backend.healthy.load(Ordering::Relaxed) && !backend.draining.load(Ordering::Relaxed) {
             return Some(backend.clone());
         }
     }

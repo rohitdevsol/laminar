@@ -149,7 +149,7 @@
 ## Metrics
 
 - [x] Active connection metrics
-- [ ] Request counters
+- [x] Request counters
 - [x] Failure counters
 - [x] Backend health metrics
 - [ ] Throughput metrics
@@ -159,9 +159,9 @@
 
 ## Prometheus Integration
 
-- [ ] Prometheus metrics exporter
-- [ ] Metrics endpoint
-- [ ] Backend-specific metrics
+- [x] Prometheus metrics exporter
+- [x] Metrics endpoint
+- [x] Backend-specific metrics
 
 ---
 
@@ -177,9 +177,9 @@
 
 ## Graceful Backend Draining
 
-- [ ] Add draining backend state
-- [ ] Stop routing new connections
-- [ ] Wait for active connections
+- [x] Add draining backend state
+- [x] Stop routing new connections
+- [x] Wait for active connections
 - [ ] Graceful backend removal
 
 ---
@@ -205,7 +205,7 @@
 ## Phase 3 Deliverable
 
 - [ ] Runtime configurability
-- [ ] Operational observability
+- [x] Operational observability
 - [ ] Graceful backend management
 
 ---

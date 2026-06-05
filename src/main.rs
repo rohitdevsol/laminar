@@ -1,18 +1,19 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 #![allow(dead_code)]
-mod admin;
+
 use anyhow::{Result, bail};
 use laminar::{
+    admin,
     config::{loader::load_config, validator::validate_config},
     health::tcp::start_health_checker,
+    metrics,
     proxy::tcp::start_tcp_proxy,
     state::app::{AppState, SharedAppState},
 };
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-mod common;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt().json().with_current_span(true).with_span_list(true).init();
@@ -35,6 +36,8 @@ async fn main() -> Result<()> {
     if state.upstreams.is_empty() {
         bail!("no upstreams configured");
     }
+
+    metrics::registry::initialize_metrics();
 
     let shared_state: SharedAppState = Arc::new(RwLock::new(state));
 

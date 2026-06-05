@@ -18,6 +18,7 @@ fn request_metrics_increment_correctly() {
         total_requests: AtomicUsize::new(0),
         failed_requests: AtomicUsize::new(0),
         failed_health_checks: 0,
+        draining: AtomicBool::new(false),
     });
 
     backend.increment_total_requests();

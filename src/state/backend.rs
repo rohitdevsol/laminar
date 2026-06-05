@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 // use std::sync::Arc;
 // use tokio::sync::RwLock;
 use crate::config::BackendServerConfig;
-
+use crate::metrics::registry::ACTIVE_CONNECTIONS;
 pub struct ConnectionGuard {
     // We hold an Arc so backend state stays alive
     // for the lifetime of the connection.
@@ -30,12 +30,17 @@ pub struct BackendState {
 
     pub total_requests: AtomicUsize,
     pub failed_requests: AtomicUsize,
+
+    pub draining: AtomicBool,
 }
 
 impl ConnectionGuard {
     pub fn new(backend: Arc<BackendState>) -> Self {
         // Increment immediately upon creation
         backend.active_connections.fetch_add(1, Ordering::Relaxed);
+        if let Some(metrics) = ACTIVE_CONNECTIONS.get() {
+            metrics.with_label_values(&[&backend.config.id]).inc();
+        }
         Self { backend }
     }
 
@@ -58,6 +63,9 @@ impl ConnectionGuard {
 impl Drop for ConnectionGuard {
     fn drop(&mut self) {
         self.backend.active_connections.fetch_sub(1, Ordering::Relaxed);
+        if let Some(metrics) = ACTIVE_CONNECTIONS.get() {
+            metrics.with_label_values(&[&self.backend.config.id]).dec();
+        }
     }
 }
 
@@ -68,6 +76,7 @@ impl BackendState {
         Self {
             config,
             healthy: AtomicBool::new(true),
+            draining: AtomicBool::new(false),
             active_connections: AtomicUsize::new(0),
             failed_health_checks: 0,
             total_requests: AtomicUsize::new(0),
@@ -81,6 +90,14 @@ impl BackendState {
 
     pub fn increment_failed_requests(&self) {
         self.failed_requests.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn mark_draining(&self) {
+        self.draining.store(true, Ordering::Relaxed);
+    }
+
+    pub fn is_draining(&self) -> bool {
+        self.draining.load(Ordering::Relaxed)
     }
 
     pub fn is_healthy(&self) -> bool {

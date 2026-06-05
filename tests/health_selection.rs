@@ -19,6 +19,7 @@ fn create_backend(id: &str, port: u16, healthy: bool) -> BackendState {
         failed_health_checks: 0,
         failed_requests: AtomicUsize::new(0),
         total_requests: AtomicUsize::new(0),
+        draining: AtomicBool::new(false),
     }
 }
 
