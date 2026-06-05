@@ -11,7 +11,7 @@
 - [x] Define configuration format
 - [x] Create runtime AppState
 - [x] Define backend configuration model
-- [ ] Setup graceful shutdown handling
+- [x] Setup graceful shutdown handling
 
 ---
 
@@ -140,8 +140,8 @@
 
 ## Weighted Balancing
 
-- [ ] Weighted Round Robin
-- [ ] Backend weights in config
+- [x] Weighted Round Robin
+- [x] Backend weights in config
 - [ ] Dynamic weight updates
 
 ---
@@ -180,16 +180,16 @@
 - [x] Add draining backend state
 - [x] Stop routing new connections
 - [x] Wait for active connections
-- [ ] Graceful backend removal
+- [x] Graceful backend removal
 
 ---
 
 ## Dynamic Config Reloading
 
-- [ ] Watch configuration file
-- [ ] Reload backend configuration
-- [ ] Preserve active connections
-- [ ] Runtime backend updates
+- [x] Watch configuration file (manual reload api semantics implemented)
+- [x] Reload backend configuration
+- [x] Preserve active connections
+- [x] Runtime backend updates
 
 ---
 
