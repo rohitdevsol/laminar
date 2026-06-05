@@ -1,3 +1,4 @@
+use crate::common::shutdown::shutdown_signal;
 use crate::state::app::SharedAppState;
 use crate::state::backend::ConnectionGuard;
 use std::{collections::HashSet, time::Duration};
@@ -15,19 +16,31 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
     info!("tcp proxy listening on {}", address);
 
     loop {
-        let (client_stream, client_address) = listener.accept().await?;
-
-        info!(
-            client = %client_address,
-            "new client connected"
-        );
-        let state = state.clone();
-        tokio::spawn(async move {
-            if let Err(error) = handle_connection(client_stream, state).await {
-                error!("connection handling failed {:?}", error)
+        tokio::select! {
+            result = listener.accept() => {
+                let (client_stream, client_address) = result?;
+                info!(
+                    client = %client_address,
+                    "new client connected"
+                );
+                let state = state.clone();
+                tokio::spawn(async move {
+                    if let Err(error) = handle_connection(client_stream,state).await
+                    {
+                        error!("connection handling failed {:?}",error);
+                    }
+                });
             }
-        });
+
+            _ = shutdown_signal() => {
+                info!("tcp proxy shutting down");
+                break;
+            }
+        }
     }
+    info!("tcp proxy stopped accepting new connections");
+
+    Ok(())
 }
 
 pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {

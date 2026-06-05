@@ -1,5 +1,6 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
+#![allow(dead_code)]
 mod admin;
 use anyhow::{Result, bail};
 use laminar::{
@@ -11,7 +12,7 @@ use laminar::{
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-
+mod common;
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt().json().with_current_span(true).with_span_list(true).init();
