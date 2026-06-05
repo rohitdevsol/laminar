@@ -24,6 +24,8 @@ async fn marks_backend_unhealthy_on_connect_timeout() {
         healthy: AtomicBool::new(true),
         active_connections: AtomicUsize::new(0),
         failed_health_checks: 0,
+        failed_requests: AtomicUsize::new(0),
+        total_requests: AtomicUsize::new(0),
     });
 
     let guard = ConnectionGuard::new(backend.clone());

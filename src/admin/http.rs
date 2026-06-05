@@ -11,6 +11,8 @@ struct BackendMetrics {
     id: String,
     healthy: bool,
     active_connections: usize,
+    total_requests: usize,
+    failed_requests: usize,
 }
 
 #[derive(Serialize)]
@@ -39,6 +41,8 @@ async fn metrics_handler(State(state): State<SharedAppState>) -> Json<MetricsRes
                     id: backend.config.id.clone(),
                     healthy: backend.healthy.load(Ordering::Relaxed),
                     active_connections: backend.active_connections.load(Ordering::Relaxed),
+                    total_requests: backend.total_requests.load(Ordering::Relaxed),
+                    failed_requests: backend.failed_requests.load(Ordering::Relaxed),
                 })
                 .collect();
 

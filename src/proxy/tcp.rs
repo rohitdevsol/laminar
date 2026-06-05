@@ -65,9 +65,11 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
 
         match proxy_connection(&mut stream, &backend_address, connect_timeout, idle_timeout).await {
             Ok(_) => {
+                guard.backend().increment_total_requests();
                 return Ok(());
             }
             Err(error) => {
+                guard.backend().increment_failed_requests();
                 guard.mark_backend_unhealthy();
                 error!(backend_id = %guard.backend_id(),backend = %backend_address,attempt = attempted_backends.len() + 1,"backend request failed: {:?}",error);
                 attempted_backends.insert(guard.backend_id().to_string());

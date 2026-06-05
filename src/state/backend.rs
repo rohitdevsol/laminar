@@ -27,6 +27,9 @@ pub struct BackendState {
     // This becomes important for least-connections balancing.
     pub active_connections: AtomicUsize,
     pub failed_health_checks: usize,
+
+    pub total_requests: AtomicUsize,
+    pub failed_requests: AtomicUsize,
 }
 
 impl ConnectionGuard {
@@ -42,6 +45,10 @@ impl ConnectionGuard {
     // get the address from the guard
     pub fn address(&self) -> String {
         format!("{}:{}", self.backend.config.host, self.backend.config.port)
+    }
+
+    pub fn backend(&self) -> &BackendState {
+        &self.backend
     }
     pub fn mark_backend_unhealthy(&self) {
         self.backend.healthy.store(false, Ordering::Relaxed);
@@ -63,7 +70,17 @@ impl BackendState {
             healthy: AtomicBool::new(true),
             active_connections: AtomicUsize::new(0),
             failed_health_checks: 0,
+            total_requests: AtomicUsize::new(0),
+            failed_requests: AtomicUsize::new(0),
         }
+    }
+
+    pub fn increment_total_requests(&self) {
+        self.total_requests.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_failed_requests(&self) {
+        self.failed_requests.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn is_healthy(&self) -> bool {
