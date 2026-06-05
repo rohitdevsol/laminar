@@ -1,7 +1,4 @@
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, AtomicUsize},
-};
+use std::sync::{Arc, atomic::AtomicUsize};
 
 use anyhow::Result;
 
@@ -35,15 +32,7 @@ pub async fn reload_config(state: SharedAppState) -> Result<()> {
                             backend_id = %server.id,
                             "adding new backend"
                         );
-                        upstream.backends.push(Arc::new(BackendState {
-                            config: server.clone(),
-                            healthy: AtomicBool::new(true),
-                            draining: AtomicBool::new(false),
-                            active_connections: AtomicUsize::new(0),
-                            total_requests: AtomicUsize::new(0),
-                            failed_requests: AtomicUsize::new(0),
-                            failed_health_checks: 0,
-                        }));
+                        upstream.backends.push(Arc::new(BackendState::new(server.clone())));
                     }
                 }
 
@@ -71,17 +60,7 @@ pub async fn reload_config(state: SharedAppState) -> Result<()> {
                 let backends = new_upstream
                     .servers
                     .into_iter()
-                    .map(|server| {
-                        Arc::new(BackendState {
-                            config: server,
-                            healthy: AtomicBool::new(true),
-                            draining: AtomicBool::new(false),
-                            active_connections: AtomicUsize::new(0),
-                            total_requests: AtomicUsize::new(0),
-                            failed_requests: AtomicUsize::new(0),
-                            failed_health_checks: 0,
-                        })
-                    })
+                    .map(|server| Arc::new(BackendState::new(server)))
                     .collect();
 
                 state.upstreams.push(UpstreamPool {
