@@ -14,7 +14,7 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().json().with_current_span(true).with_span_list(true).init();
 
     let path = std::env::args().nth(1).unwrap_or_else(|| "laminar_config.yaml".to_string());
 
