@@ -65,11 +65,12 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
     // if connection fails:
     // mark that backend unhealthy so future selections skip it
     for _ in 0..retry_attempt {
-        let backend_arc = {
+        let (backend_arc, algorithm) = {
             let state = state.read().await;
             let upstream = &state.upstreams[0];
+            let algorithm = upstream.algorithm.clone();
             match upstream.next_backend() {
-                Some(backend) => backend,
+                Some(backend) => (backend, algorithm),
                 None => {
                     error!(
                         request_id = %request_id,
@@ -91,6 +92,7 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
             request_id = %request_id,
             backend_id = %guard.backend_id(),
             backend = %backend_address,
+            algorithm = ?algorithm,
             "proxy connection started"
         );
 
