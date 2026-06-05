@@ -49,6 +49,7 @@ pub async fn reload_config(state: SharedAppState) -> Result<()> {
                         );
                     }
                 }
+                upstream.rebuild_weighted_backends();
             }
 
             None => {
@@ -63,12 +64,21 @@ pub async fn reload_config(state: SharedAppState) -> Result<()> {
                     .map(|server| Arc::new(BackendState::new(server)))
                     .collect();
 
-                state.upstreams.push(UpstreamPool {
+                let mut upstream_pool = UpstreamPool {
                     id: new_upstream.id,
+
                     current_index: AtomicUsize::new(0),
+
                     algorithm: new_upstream.algorithm,
+
                     backends,
-                });
+
+                    weighted_backends: Vec::new(),
+                };
+
+                upstream_pool.rebuild_weighted_backends();
+
+                state.upstreams.push(upstream_pool);
             }
         }
     }

@@ -6,26 +6,20 @@ use std::sync::{
 use crate::state::backend::BackendState;
 
 pub fn select_backend(
-    backends: &[Arc<BackendState>],
+    weighted_backends: &[Arc<BackendState>],
     current_index: &AtomicUsize,
 ) -> Option<Arc<BackendState>> {
-    let mut weighted = Vec::new();
+    let routable = weighted_backends
+        .iter()
+        .filter(|backend| backend.is_routable())
+        .cloned()
+        .collect::<Vec<_>>();
 
-    for backend in backends {
-        if !backend.is_routable() {
-            continue;
-        }
-
-        for _ in 0..backend.config.weight {
-            weighted.push(backend.clone());
-        }
-    }
-
-    if weighted.is_empty() {
+    if routable.is_empty() {
         return None;
     }
 
     let index = current_index.fetch_add(1, Ordering::Relaxed);
 
-    Some(weighted[index % weighted.len()].clone())
+    Some(routable[index % routable.len()].clone())
 }

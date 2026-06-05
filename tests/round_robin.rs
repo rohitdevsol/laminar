@@ -33,6 +33,7 @@ fn round_robin_rotates_backends() {
             create_backend("server-1", 9001).into(),
             create_backend("server-2", 9002).into(),
         ],
+        weighted_backends: Vec::new(),
     };
 
     let first = upstream.next_backend().unwrap();

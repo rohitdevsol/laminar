@@ -25,14 +25,21 @@ fn create_backend(id: &str, weight: usize, healthy: bool, draining: bool) -> Arc
 fn weighted_distribution_is_respected() {
     let backend_1 = create_backend("server-1", 5, true, false);
     let backend_2 = create_backend("server-2", 1, true, false);
-    let backends = vec![backend_1, backend_2];
+    let weighted_backends = vec![
+        backend_1.clone(),
+        backend_1.clone(),
+        backend_1.clone(),
+        backend_1.clone(),
+        backend_1.clone(),
+        backend_2.clone(),
+    ];
     let counter = AtomicUsize::new(0);
 
     let mut server_1_hits = 0;
     let mut server_2_hits = 0;
 
     for _ in 0..600 {
-        let backend = weighted_round_robin::select_backend(&backends, &counter).unwrap();
+        let backend = weighted_round_robin::select_backend(&weighted_backends, &counter).unwrap();
         match backend.config.id.as_str() {
             "server-1" => {
                 server_1_hits += 1;

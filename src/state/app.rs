@@ -12,6 +12,7 @@ pub struct UpstreamPool {
     pub current_index: AtomicUsize,
     pub algorithm: LoadBalancingAlgorithm,
     pub backends: Vec<Arc<BackendState>>,
+    pub weighted_backends: Vec<Arc<BackendState>>,
 }
 
 impl UpstreamPool {
@@ -25,10 +26,20 @@ impl UpstreamPool {
                 least_connections::select_backend(&self.backends)
             }
             LoadBalancingAlgorithm::WeightedRoundRobin => {
-                weighted_round_robin::select_backend(&self.backends, &self.current_index)
+                weighted_round_robin::select_backend(&self.weighted_backends, &self.current_index)
             }
             _ => {
                 unimplemented!("algorithm not implemented yet")
+            }
+        }
+    }
+
+    pub fn rebuild_weighted_backends(&mut self) {
+        self.weighted_backends.clear();
+
+        for backend in &self.backends {
+            for _ in 0..backend.config.weight {
+                self.weighted_backends.push(backend.clone());
             }
         }
     }
@@ -67,13 +78,16 @@ impl AppState {
                 let backends =
                     upstream.servers.into_iter().map(|s| Arc::new(BackendState::new(s))).collect();
 
-                UpstreamPool {
+                let mut upstream_pool = UpstreamPool {
                     id: upstream.id,
                     current_index: AtomicUsize::new(0),
                     algorithm: upstream.algorithm,
+                    backends,
+                    weighted_backends: Vec::new(),
+                };
 
-                    backends, // all backends belonging to a single upstream type ( single logical service)
-                }
+                upstream_pool.rebuild_weighted_backends();
+                upstream_pool
             })
             .collect();
 
