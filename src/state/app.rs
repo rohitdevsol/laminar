@@ -1,4 +1,4 @@
-use crate::algorithms::{least_connections, round_robin};
+use crate::algorithms::{least_connections, round_robin, weighted_round_robin};
 use crate::config::LoadBalancingAlgorithm;
 use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
@@ -23,6 +23,9 @@ impl UpstreamPool {
             }
             LoadBalancingAlgorithm::LeastConnections => {
                 least_connections::select_backend(&self.backends)
+            }
+            LoadBalancingAlgorithm::WeightedRoundRobin => {
+                weighted_round_robin::select_backend(&self.backends, &self.current_index)
             }
             _ => {
                 unimplemented!("algorithm not implemented yet")
