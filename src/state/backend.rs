@@ -103,4 +103,8 @@ impl BackendState {
     pub fn is_healthy(&self) -> bool {
         self.healthy.load(Ordering::Relaxed)
     }
+
+    pub fn is_routable(&self) -> bool {
+        self.healthy.load(Ordering::Relaxed) && !self.draining.load(Ordering::Relaxed)
+    }
 }

@@ -36,7 +36,7 @@ async fn test_connect_timeout() {
         }],
     };
 
-    let state = Arc::new(RwLock::new(AppState::build(config)));
+    let state = Arc::new(RwLock::new(AppState::build(config, "laminar_config.yaml".to_string())));
 
     // Create a local listener to act as the "client" entry point
     let proxy_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -89,7 +89,7 @@ async fn test_idle_timeout() {
         }],
     };
 
-    let state = Arc::new(RwLock::new(AppState::build(config)));
+    let state = Arc::new(RwLock::new(AppState::build(config, "laminar_config.yaml".to_string())));
 
     // 2. Start a local listener to act as the "client" entry point
     let proxy_listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

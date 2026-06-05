@@ -1,4 +1,6 @@
-use crate::{metrics::registry::gather_metrics, state::app::SharedAppState};
+use crate::{
+    admin::reload::reload_config, metrics::registry::gather_metrics, state::app::SharedAppState,
+};
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -29,6 +31,31 @@ struct UpstreamMetrics {
 #[derive(Serialize)]
 struct MetricsResponse {
     upstreams: Vec<UpstreamMetrics>,
+}
+
+#[derive(Serialize)]
+struct BackendStatus {
+    id: String,
+    healthy: bool,
+    draining: bool,
+    weight: usize,
+    active_connections: usize,
+    total_requests: usize,
+    failed_requests: usize,
+}
+
+#[derive(Serialize)]
+struct UpstreamStatus {
+    id: String,
+    algorithm: String,
+    backend_count: usize,
+    weighted_backend_count: usize,
+    backends: Vec<BackendStatus>,
+}
+
+#[derive(Serialize)]
+struct StatusResponse {
+    upstreams: Vec<UpstreamStatus>,
 }
 
 async fn prometheus_handler() -> String {
@@ -76,7 +103,6 @@ async fn drain_backend_handler(
         for backend in &upstream.backends {
             if backend.config.id == id {
                 backend.mark_draining();
-
                 tracing::info!(
                     backend_id = %id,
                     "backend marked as draining"
@@ -90,11 +116,62 @@ async fn drain_backend_handler(
     format!("backend '{id}' not found")
 }
 
+async fn reload_handler(State(state): State<SharedAppState>) -> String {
+    match reload_config(state).await {
+        Ok(_) => "config reloaded".into(),
+
+        Err(error) => {
+            tracing::error!(
+                error = %error,
+                "config reload failed"
+            );
+
+            format!("reload failed: {error}")
+        }
+    }
+}
+
+async fn status_handler(State(state): State<SharedAppState>) -> Json<StatusResponse> {
+    let state = state.read().await;
+
+    let upstreams = state
+        .upstreams
+        .iter()
+        .map(|upstream| {
+            let backends = upstream
+                .backends
+                .iter()
+                .map(|backend| BackendStatus {
+                    id: backend.config.id.clone(),
+                    healthy: backend.healthy.load(Ordering::Relaxed),
+                    draining: backend.draining.load(Ordering::Relaxed),
+                    weight: backend.config.weight,
+                    active_connections: backend.active_connections.load(Ordering::Relaxed),
+                    total_requests: backend.total_requests.load(Ordering::Relaxed),
+                    failed_requests: backend.failed_requests.load(Ordering::Relaxed),
+                })
+                .collect();
+
+            UpstreamStatus {
+                id: upstream.id.clone(),
+                algorithm: format!("{:?}", upstream.algorithm),
+                backend_count: upstream.backends.len(),
+                weighted_backend_count: upstream.weighted_backends.len(),
+                backends,
+            }
+        })
+        .collect();
+
+    Json(StatusResponse { upstreams })
+}
+
 pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
         .route("/backend/{id}/drain", post(drain_backend_handler))
         .route("/prometheus", get(prometheus_handler))
+        .route("/reload", post(reload_handler))
+        .route("/status", get(status_handler))
         .with_state(state);
     let listener = TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;

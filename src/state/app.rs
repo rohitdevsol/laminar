@@ -1,4 +1,4 @@
-use crate::algorithms::{least_connections, round_robin};
+use crate::algorithms::{least_connections, round_robin, weighted_round_robin};
 use crate::config::LoadBalancingAlgorithm;
 use crate::{config::types::Config, state::backend::BackendState};
 use std::sync::Arc;
@@ -12,6 +12,7 @@ pub struct UpstreamPool {
     pub current_index: AtomicUsize,
     pub algorithm: LoadBalancingAlgorithm,
     pub backends: Vec<Arc<BackendState>>,
+    pub weighted_backends: Vec<Arc<BackendState>>,
 }
 
 impl UpstreamPool {
@@ -24,8 +25,21 @@ impl UpstreamPool {
             LoadBalancingAlgorithm::LeastConnections => {
                 least_connections::select_backend(&self.backends)
             }
+            LoadBalancingAlgorithm::WeightedRoundRobin => {
+                weighted_round_robin::select_backend(&self.weighted_backends, &self.current_index)
+            }
             _ => {
                 unimplemented!("algorithm not implemented yet")
+            }
+        }
+    }
+
+    pub fn rebuild_weighted_backends(&mut self) {
+        self.weighted_backends.clear();
+
+        for backend in &self.backends {
+            for _ in 0..backend.config.weight {
+                self.weighted_backends.push(backend.clone());
             }
         }
     }
@@ -43,12 +57,13 @@ pub struct AppState {
     pub upstreams: Vec<UpstreamPool>,
     pub connect_timeout: Duration,
     pub idle_timeout: Duration,
+    pub config_path: String,
 }
 
 pub type SharedAppState = Arc<RwLock<AppState>>;
 
 impl AppState {
-    pub fn build(config: Config) -> Self {
+    pub fn build(config: Config, config_path: String) -> Self {
         // config.upstreams is a grouped collection of upstreams
         // each upstream has an id, algorithm and servers( yes group of servers)
         // each server has id, host, port, weight
@@ -63,13 +78,16 @@ impl AppState {
                 let backends =
                     upstream.servers.into_iter().map(|s| Arc::new(BackendState::new(s))).collect();
 
-                UpstreamPool {
+                let mut upstream_pool = UpstreamPool {
                     id: upstream.id,
                     current_index: AtomicUsize::new(0),
                     algorithm: upstream.algorithm,
+                    backends,
+                    weighted_backends: Vec::new(),
+                };
 
-                    backends, // all backends belonging to a single upstream type ( single logical service)
-                }
+                upstream_pool.rebuild_weighted_backends();
+                upstream_pool
             })
             .collect();
 
@@ -78,6 +96,7 @@ impl AppState {
             retry_attempts: config.load_balancer.retry_attempts,
             connect_timeout: Duration::from_secs(config.load_balancer.connect_timeout_secs),
             idle_timeout: Duration::from_secs(config.load_balancer.idle_timeout_secs),
+            config_path,
         }
     }
 }

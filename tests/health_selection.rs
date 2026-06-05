@@ -33,6 +33,7 @@ fn unhealthy_backend_is_skipped() {
             create_backend("dead", 9001, false).into(),
             create_backend("healthy", 9002, true).into(),
         ],
+        weighted_backends: Vec::new(),
     };
 
     let backend = upstream.next_backend().unwrap();
@@ -50,6 +51,7 @@ fn returns_none_when_all_backends_dead() {
             create_backend("dead-1", 9001, false).into(),
             create_backend("dead-2", 9002, false).into(),
         ],
+        weighted_backends: Vec::new(),
     };
 
     let backend = upstream.next_backend();

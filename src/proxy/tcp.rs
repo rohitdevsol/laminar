@@ -1,7 +1,11 @@
 use crate::common::shutdown::shutdown_signal;
-use crate::metrics::registry::{FAILED_REQUESTS, TOTAL_REQUESTS};
+use crate::metrics::registry::{
+    BACKEND_CONNECT_DURATION, BYTES_IN, BYTES_OUT, FAILED_REQUESTS, REQUEST_DURATION,
+    TOTAL_REQUESTS,
+};
 use crate::state::app::SharedAppState;
 use crate::state::backend::ConnectionGuard;
+use std::time::Instant;
 use std::{collections::HashSet, time::Duration};
 use tokio::{
     io::copy_bidirectional,
@@ -49,6 +53,7 @@ pub async fn start_tcp_proxy(address: &str, state: SharedAppState) -> anyhow::Re
 
 pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> anyhow::Result<()> {
     let request_id = Uuid::new_v4();
+    let request_start = Instant::now();
     let (retry_attempt, connect_timeout, idle_timeout) = {
         let state = state.read().await;
         (state.retry_attempts, state.connect_timeout, state.idle_timeout)
@@ -65,11 +70,12 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
     // if connection fails:
     // mark that backend unhealthy so future selections skip it
     for _ in 0..retry_attempt {
-        let backend_arc = {
+        let (backend_arc, algorithm) = {
             let state = state.read().await;
             let upstream = &state.upstreams[0];
+            let algorithm = upstream.algorithm.clone();
             match upstream.next_backend() {
-                Some(backend) => backend,
+                Some(backend) => (backend, algorithm),
                 None => {
                     error!(
                         request_id = %request_id,
@@ -91,10 +97,19 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
             request_id = %request_id,
             backend_id = %guard.backend_id(),
             backend = %backend_address,
+            algorithm = ?algorithm,
             "proxy connection started"
         );
 
-        match proxy_connection(&mut stream, &backend_address, connect_timeout, idle_timeout).await {
+        match proxy_connection(
+            &mut stream,
+            guard.backend_id(),
+            &backend_address,
+            connect_timeout,
+            idle_timeout,
+        )
+        .await
+        {
             Ok(_) => {
                 info!(
                     request_id = %request_id,
@@ -105,6 +120,13 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
                     metrics.with_label_values(&[guard.backend_id()]).inc();
                 }
                 guard.backend().increment_total_requests();
+
+                if let Some(histogram) = REQUEST_DURATION.get() {
+                    histogram
+                        .with_label_values(&[guard.backend_id()])
+                        .observe(request_start.elapsed().as_secs_f64());
+                }
+
                 return Ok(());
             }
             Err(error) => {
@@ -135,15 +157,31 @@ pub async fn handle_connection(mut stream: TcpStream, state: SharedAppState) -> 
 
 async fn proxy_connection(
     client_stream: &mut TcpStream,
+    backend_id: &str,
     backend_address: &str,
     connect_timeout: Duration,
     idle_timeout: Duration,
 ) -> anyhow::Result<()> {
+    let connect_start = Instant::now();
     let mut backend_stream =
         timeout(connect_timeout, TcpStream::connect(backend_address)).await??;
 
+    if let Some(histogram) = BACKEND_CONNECT_DURATION.get() {
+        histogram.with_label_values(&[backend_id]).observe(connect_start.elapsed().as_secs_f64());
+    }
+
     match timeout(idle_timeout, copy_bidirectional(client_stream, &mut backend_stream)).await {
-        Ok(Ok(_)) => Ok(()),
+        Ok(Ok((from_client, from_backend))) => {
+            if let Some(counter) = BYTES_IN.get() {
+                counter.with_label_values(&[backend_id]).inc_by(from_client);
+            }
+
+            if let Some(counter) = BYTES_OUT.get() {
+                counter.with_label_values(&[backend_id]).inc_by(from_backend);
+            }
+
+            Ok(())
+        }
 
         Ok(Err(error)) => {
             anyhow::bail!("proxy IO error: {error}");
