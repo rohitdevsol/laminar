@@ -152,7 +152,7 @@
 - [x] Request counters
 - [x] Failure counters
 - [x] Backend health metrics
-- [ ] Throughput metrics
+- [x] Throughput metrics
 - [x] Track total requests
 
 ---
@@ -186,7 +186,8 @@
 
 ## Dynamic Config Reloading
 
-- [x] Watch configuration file (manual reload api semantics implemented)
+- [x] Runtime config reload API
+- [x] Automatic file watcher reload
 - [x] Reload backend configuration
 - [x] Preserve active connections
 - [x] Runtime backend updates
@@ -195,18 +196,18 @@
 
 ## Admin API
 
-- [ ] Add runtime status endpoint
+- [x] Add runtime status endpoint
 - [ ] Add backend health endpoint
-- [ ] Add backend enable/disable API
+- [x] Add backend enable/disable API
 - [x] Add metrics endpoint
 
 ---
 
 ## Phase 3 Deliverable
 
-- [ ] Runtime configurability
+- [x] Runtime configurability
 - [x] Operational observability
-- [ ] Graceful backend management
+- [x] Graceful backend management
 
 ---
 

@@ -165,6 +165,54 @@ async fn status_handler(State(state): State<SharedAppState>) -> Json<StatusRespo
     Json(StatusResponse { upstreams })
 }
 
+async fn disable_backend_handler(
+    Path(id): Path<String>,
+    State(state): State<SharedAppState>,
+) -> String {
+    let state = state.read().await;
+
+    for upstream in &state.upstreams {
+        for backend in &upstream.backends {
+            if backend.config.id == id {
+                backend.disable();
+
+                tracing::info!(
+                    backend_id = %id,
+                    "backend disabled"
+                );
+
+                return format!("backend '{id}' disabled");
+            }
+        }
+    }
+
+    format!("backend '{id}' not found")
+}
+
+async fn enable_backend_handler(
+    Path(id): Path<String>,
+    State(state): State<SharedAppState>,
+) -> String {
+    let state = state.read().await;
+
+    for upstream in &state.upstreams {
+        for backend in &upstream.backends {
+            if backend.config.id == id {
+                backend.enable();
+
+                tracing::info!(
+                    backend_id = %id,
+                    "backend enabled"
+                );
+
+                return format!("backend '{id}' enabled");
+            }
+        }
+    }
+
+    format!("backend '{id}' not found")
+}
+
 pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
@@ -172,6 +220,8 @@ pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow:
         .route("/prometheus", get(prometheus_handler))
         .route("/reload", post(reload_handler))
         .route("/status", get(status_handler))
+        .route("/backend/{id}/disable", post(disable_backend_handler))
+        .route("/backend/{id}/enable", post(enable_backend_handler))
         .with_state(state);
     let listener = TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;

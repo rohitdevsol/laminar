@@ -44,13 +44,27 @@ async fn main() -> Result<()> {
     let health_state = shared_state.clone();
     let admin_state = shared_state.clone();
 
+    let watcher_state = shared_state.clone();
+    let watcher_path = path.clone();
+
     tokio::spawn(async move {
         if let Err(error) = admin::http::start_admin_server("127.0.0.1:9090", admin_state).await {
             tracing::error!("admin server failed: {:?}", error);
         }
     });
+
     tokio::spawn(async move {
         start_health_checker(health_state, health_interval).await;
+    });
+
+    tokio::spawn(async move {
+        if let Err(error) = admin::watcher::start_config_watcher(watcher_state, watcher_path).await
+        {
+            tracing::error!(
+                error = %error,
+                "config watcher failed"
+            );
+        }
     });
 
     let listener_address = format!("{listener_host}:{listener_port}");
