@@ -41,6 +41,9 @@ async fn main() -> Result<()> {
 
     let shared_state: SharedAppState = Arc::new(RwLock::new(state));
 
+    let watcher_state = shared_state.clone();
+    let watcher_path = path.clone();
+
     let health_state = shared_state.clone();
     let admin_state = shared_state.clone();
 
@@ -49,8 +52,19 @@ async fn main() -> Result<()> {
             tracing::error!("admin server failed: {:?}", error);
         }
     });
+
     tokio::spawn(async move {
         start_health_checker(health_state, health_interval).await;
+    });
+
+    tokio::spawn(async move {
+        if let Err(error) = admin::watcher::start_config_watcher(watcher_state, watcher_path).await
+        {
+            tracing::error!(
+                error = %error,
+                "config watcher failed"
+            );
+        }
     });
 
     let listener_address = format!("{listener_host}:{listener_port}");

@@ -6,7 +6,7 @@ use axum::{
     extract::{Path, State},
     routing::{get, post},
 };
-use std::sync::atomic::Ordering;
+use std::sync::{Arc, atomic::Ordering};
 
 use serde::Serialize;
 use tokio::net::TcpListener;
@@ -56,6 +56,13 @@ struct UpstreamStatus {
 #[derive(Serialize)]
 struct StatusResponse {
     upstreams: Vec<UpstreamStatus>,
+}
+
+#[derive(Serialize)]
+struct BackendHealthResponse {
+    id: String,
+    healthy: bool,
+    draining: bool,
 }
 
 async fn prometheus_handler() -> String {
@@ -165,6 +172,100 @@ async fn status_handler(State(state): State<SharedAppState>) -> Json<StatusRespo
     Json(StatusResponse { upstreams })
 }
 
+async fn disable_backend_handler(
+    Path(id): Path<String>,
+    State(state): State<SharedAppState>,
+) -> String {
+    let state = state.read().await;
+
+    for upstream in &state.upstreams {
+        for backend in &upstream.backends {
+            if backend.config.id == id {
+                backend.disable();
+
+                tracing::info!(
+                    backend_id = %id,
+                    "backend disabled"
+                );
+
+                return format!("backend '{id}' disabled");
+            }
+        }
+    }
+
+    format!("backend '{id}' not found")
+}
+
+async fn backend_health_handler(
+    Path(id): Path<String>,
+    State(state): State<SharedAppState>,
+) -> Json<Option<BackendHealthResponse>> {
+    let state = state.read().await;
+
+    for upstream in &state.upstreams {
+        for backend in &upstream.backends {
+            if backend.config.id == id {
+                return Json(Some(BackendHealthResponse {
+                    id: backend.config.id.clone(),
+                    healthy: backend.healthy.load(Ordering::Relaxed),
+                    draining: backend.draining.load(Ordering::Relaxed),
+                }));
+            }
+        }
+    }
+    Json(None)
+}
+
+async fn enable_backend_handler(
+    Path(id): Path<String>,
+    State(state): State<SharedAppState>,
+) -> String {
+    let state = state.read().await;
+
+    for upstream in &state.upstreams {
+        for backend in &upstream.backends {
+            if backend.config.id == id {
+                backend.enable();
+
+                tracing::info!(
+                    backend_id = %id,
+                    "backend enabled"
+                );
+
+                return format!("backend '{id}' enabled");
+            }
+        }
+    }
+
+    format!("backend '{id}' not found")
+}
+
+async fn update_backend_weight_handler(
+    Path((id, weight)): Path<(String, usize)>,
+    State(state): State<SharedAppState>,
+) -> String {
+    let mut state = state.write().await;
+    for upstream in &mut state.upstreams {
+        for backend in &mut upstream.backends {
+            if backend.config.id == id {
+                if let Some(inner) = Arc::get_mut(backend) {
+                    inner.set_weight(weight);
+                    upstream.rebuild_weighted_backends();
+                    tracing::info!(
+                        backend_id = %id,
+                        weight = weight,
+                        "backend weight updated"
+                    );
+                    return format!("backend '{id}' weight updated to {weight}");
+                }
+                return format!("backend '{id}' currently in use");
+            }
+        }
+    }
+
+    format!("backend '{id}' not found")
+}
+
 pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/metrics", get(metrics_handler))
@@ -172,6 +273,10 @@ pub async fn start_admin_server(address: &str, state: SharedAppState) -> anyhow:
         .route("/prometheus", get(prometheus_handler))
         .route("/reload", post(reload_handler))
         .route("/status", get(status_handler))
+        .route("/backend/{id}/disable", post(disable_backend_handler))
+        .route("/backend/{id}/enable", post(enable_backend_handler))
+        .route("/backend/{id}/health", get(backend_health_handler))
+        .route("/backend/{id}/weight/{weight}", post(update_backend_weight_handler))
         .with_state(state);
     let listener = TcpListener::bind(address).await?;
     axum::serve(listener, app).await?;
