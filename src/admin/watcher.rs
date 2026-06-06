@@ -11,6 +11,11 @@ pub async fn start_config_watcher(state: SharedAppState, path: String) -> notify
 
     watcher.watch(path.as_ref(), RecursiveMode::NonRecursive)?;
 
+    tracing::info!(
+        path = %path,
+        "config watcher started"
+    );
+
     while let Some(event) = rx.recv().await {
         match event {
             Ok(_) => {

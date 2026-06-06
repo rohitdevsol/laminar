@@ -115,4 +115,8 @@ impl BackendState {
     pub fn enable(&self) {
         self.healthy.store(true, Ordering::Relaxed);
     }
+
+    pub fn set_weight(&mut self, weight: usize) {
+        self.config.weight = weight;
+    }
 }

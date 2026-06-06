@@ -41,11 +41,11 @@ async fn main() -> Result<()> {
 
     let shared_state: SharedAppState = Arc::new(RwLock::new(state));
 
-    let health_state = shared_state.clone();
-    let admin_state = shared_state.clone();
-
     let watcher_state = shared_state.clone();
     let watcher_path = path.clone();
+
+    let health_state = shared_state.clone();
+    let admin_state = shared_state.clone();
 
     tokio::spawn(async move {
         if let Err(error) = admin::http::start_admin_server("127.0.0.1:9090", admin_state).await {

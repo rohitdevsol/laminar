@@ -253,27 +253,77 @@ interact during live traffic routing and health monitoring.
 - Added draining-aware backend selection
 - Added runtime request and failure metrics
 - Added Prometheus active connection gauges
+- Added runtime config reload support
+- Added graceful backend removal semantics
+- Added weighted round robin balancing
+- Added backend weight configuration support
+- Added runtime reload integration tests
+- Added draining lifecycle integration tests
 
 ### Changed
 
+- Refactored weighted round robin scheduling using precomputed weighted backend pools
 - Refactored proxy connection lifecycle logging
 - Improved structured tracing across retries and request flow
 - Improved backend runtime observability
 - Improved connection accounting using Prometheus gauges
 - Improved backend lifecycle management semantics
+- Improved runtime reload reconciliation behavior
+- Improved weighted scheduling runtime efficiency
 - Cleaned up proxy retry orchestration flow
 
 ### Notes
 
-This phase focused heavily on operational observability and runtime lifecycle management.
+This phase focused heavily on operational observability, runtime lifecycle safety, and runtime traffic management behavior.
 
 Laminar now supports:
 
 - Prometheus-compatible metrics
 - structured request tracing
 - graceful shutdown handling
-- backend draining
-- runtime traffic visibility
+- graceful backend draining
+- runtime config reloads
+- weighted traffic distribution
+- runtime-safe backend lifecycle transitions
 - backend-aware operational telemetry
 
-The runtime now behaves more like an operational load balancing system with live observability and traffic management capabilities.
+The runtime now behaves much more like a production-oriented traffic management system with live observability, graceful lifecycle handling, and runtime traffic control semantics.
+
+---
+
+## 2026-06-06
+
+### Added
+
+- Added Prometheus request duration histograms
+- Added backend connection latency histograms
+- Added throughput metrics for inbound and outbound traffic
+- Added runtime status API endpoint
+- Added backend enable/disable admin APIs
+- Added backend health API endpoint
+- Added dynamic backend weight update API
+- Added automatic config watcher reload support
+
+### Changed
+
+- Standardized Prometheus metric labels using backend IDs
+- Improved runtime observability with latency-aware metrics
+- Improved weighted round robin runtime efficiency
+- Improved operational runtime control APIs
+- Improved backend runtime management semantics
+
+### Notes
+
+This phase focused on completing Laminar’s runtime control and observability layer.
+
+Laminar now supports:
+
+- runtime status introspection APIs
+- backend operational control APIs
+- dynamic backend weight mutation
+- automatic config reload watching
+- request latency observability
+- backend connection latency tracking
+- throughput visibility
+
+Phase 3 now provides a much more complete operational runtime environment with live observability, runtime mutation support, and production-style backend lifecycle controls.

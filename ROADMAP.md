@@ -142,7 +142,7 @@
 
 - [x] Weighted Round Robin
 - [x] Backend weights in config
-- [ ] Dynamic weight updates
+- [x] Dynamic weight updates
 
 ---
 
@@ -197,7 +197,7 @@
 ## Admin API
 
 - [x] Add runtime status endpoint
-- [ ] Add backend health endpoint
+- [x] Add backend health endpoint
 - [x] Add backend enable/disable API
 - [x] Add metrics endpoint
 
